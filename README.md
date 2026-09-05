@@ -1,6 +1,6 @@
 <div align="center">
 
-#  NexoPrep.AI
+#  Nexxxoprep.AI
 
 ### AI Hiring Intelligence & Recruitment Automation Platform
 
