@@ -1,0 +1,17 @@
+{
+  "file_name": "candidate.json",
+  "file_error": null,
+  "total_candidates": 1,
+  "succeeded": 0,
+  "failed": 1,
+  "candidates": [
+    {
+      "index": 1,
+      "identifier": "CAND-001",
+      "success": false,
+      "session_uuid": null,
+      "error": "1 validation error for YashShortlistPayload\nemail\n  value is not a valid email address: There must be something before the @-sign. [type=value_error, input_value='@gmail.com', input_type=str]"
+    }
+  ],
+  "failed_at": "2026-07-25T12:55:42Z"
+}

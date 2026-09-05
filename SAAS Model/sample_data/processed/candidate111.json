@@ -1,0 +1,48 @@
+[
+  {
+    "candidate_id": "CAND-DEMO-005",
+    "name": "Aarav Mehta",
+    "email": "replace-with-working-email-1@example.com",
+    "phone": "9876543210",
+    "resume_score": 88.5,
+    "position_name": "Python Backend Developer",
+    "skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+    "summary": "Backend developer with API and database experience.",
+    "experience_level": "2 years",
+    "jd_match_percentage": 89.0,
+    "strengths": ["REST APIs", "Database design", "Problem solving"],
+    "recommended_role": "Backend Developer",
+    "shortlist_reasons": [
+      "Strong Python and FastAPI experience",
+      "Relevant PostgreSQL knowledge"
+    ],
+    "interview_topics": [
+      "Python fundamentals",
+      "FastAPI and REST APIs",
+      "PostgreSQL queries"
+    ]
+  },
+  {
+    "candidate_id": "CAND-DEMO-006",
+    "name": "Diya Sharma",
+    "email": "replace-with-working-email-2@example.com",
+    "phone": "9123456780",
+    "resume_score": 91.0,
+    "position_name": "Full Stack Developer",
+    "skills": ["React", "JavaScript", "Python", "SQL"],
+    "summary": "Full stack developer experienced in React frontends and Python services.",
+    "experience_level": "3 years",
+    "jd_match_percentage": 92.0,
+    "strengths": ["Frontend development", "API integration", "Team collaboration"],
+    "recommended_role": "Full Stack Developer",
+    "shortlist_reasons": [
+      "Strong React and JavaScript skills",
+      "Good Python and SQL foundation"
+    ],
+    "interview_topics": [
+      "React component design",
+      "JavaScript fundamentals",
+      "Python API development"
+    ]
+  }
+]

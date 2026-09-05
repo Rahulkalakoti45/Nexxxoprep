@@ -1,0 +1,37 @@
+{
+  "name": "@nexoprep/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -b",
+    "start": "tsx src/index.ts",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/websocket": "^11.2.0",
+    "@nexoprep/analytics-service": "0.1.0",
+    "@nexoprep/config": "0.1.0",
+    "@nexoprep/database": "0.1.0",
+    "@nexoprep/events": "0.1.0",
+    "@nexoprep/memory-service": "0.1.0",
+    "@nexoprep/report-service": "0.1.0",
+    "@nexoprep/session-service": "0.1.0",
+    "@nexoprep/shared": "0.1.0",
+    "fastify": "^5.6.2",
+    "ioredis": "^5.8.2",
+    "tsx": "^4.21.0",
+    "ws": "^8.18.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.9.3"
+  }
+}

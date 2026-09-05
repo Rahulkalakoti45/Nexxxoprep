@@ -1,0 +1,17 @@
+{
+  "file_name": "candidate1.json",
+  "file_error": null,
+  "total_candidates": 1,
+  "succeeded": 0,
+  "failed": 1,
+  "candidates": [
+    {
+      "index": 1,
+      "identifier": "Rahul Sharma",
+      "success": false,
+      "session_uuid": null,
+      "error": "3 validation errors for YashShortlistPayload\nresume_score\n  Field required [type=missing, input_value={'name': 'Rahul Sharma', ... REST APIs and Docker.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nshortlist_reasons\n  Field required [type=missing, input_value={'name': 'Rahul Sharma', ... REST APIs and Docker.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\ninterview_topics\n  Field required [type=missing, input_value={'name': 'Rahul Sharma', ... REST APIs and Docker.'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+    }
+  ],
+  "failed_at": "2026-07-25T11:13:33Z"
+}

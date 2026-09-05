@@ -1,0 +1,24 @@
+{
+  "candidate_id": "CAND-DEMO-007",
+  "name": "Yash Verma",
+  "email": "vermayash2200@gmail.com",
+  "phone": "9988776655",
+  "resume_score": 86.5,
+  "position_name": "Backend Developer",
+  "skills": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+  "summary": "Backend developer with experience building REST APIs and database-driven applications.",
+  "experience_level": "2 years",
+  "jd_match_percentage": 87.0,
+  "strengths": ["Python development", "REST API design", "SQL queries"],
+  "recommended_role": "Backend Developer",
+  "shortlist_reasons": [
+    "Strong Python and FastAPI fundamentals",
+    "Relevant PostgreSQL and API development experience"
+  ],
+  "interview_topics": [
+    "Python fundamentals",
+    "FastAPI and REST APIs",
+    "PostgreSQL queries",
+    "Docker basics"
+  ]
+}

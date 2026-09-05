@@ -1,0 +1,9 @@
+{
+  "file_name": "candidate1.json",
+  "file_error": "Invalid candidate file: Expecting value: line 23 column 1 (char 596)",
+  "total_candidates": 0,
+  "succeeded": 0,
+  "failed": 0,
+  "candidates": [],
+  "failed_at": "2026-07-25T11:15:58Z"
+}

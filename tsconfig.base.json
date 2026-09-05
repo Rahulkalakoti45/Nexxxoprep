@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "baseUrl": ".",
+    "paths": {
+      "@nexoprep/types": ["packages/types/src/index.ts"],
+      "@nexoprep/shared": ["packages/shared/src/index.ts"],
+      "@nexoprep/config": ["packages/config/src/index.ts"],
+      "@nexoprep/database": ["packages/database/src/index.ts"],
+      "@nexoprep/events": ["packages/events/src/index.ts"],
+      "@nexoprep/memory-service": ["services/memory-service/src/index.ts"],
+      "@nexoprep/session-service": ["services/session-service/src/index.ts"],
+      "@nexoprep/report-service": ["services/report-service/src/index.ts"],
+      "@nexoprep/analytics-service": ["services/analytics-service/src/index.ts"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  }
+}

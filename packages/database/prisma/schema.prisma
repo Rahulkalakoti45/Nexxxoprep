@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InterviewMode {
+  standard
+  ai_simulated
+  voice_realtime
+}
+
+enum SessionStatus {
+  created
+  active
+  paused
+  completed
+  abandoned
+  failed
+}
+
+enum RoundStatus {
+  pending
+  active
+  completed
+  skipped
+}
+
+enum TranscriptSpeaker {
+  candidate
+  interviewer
+  system
+  ai
+}
+
+enum EventSeverity {
+  debug
+  info
+  warning
+  error
+  critical
+}
+
+model User {
+  id              String             @id @default(uuid())
+  email           String             @unique
+  name            String
+  college         String?
+  branch          String?
+  graduationYear  Int?
+  targetRole      String?
+  experienceLevel String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  sessions        InterviewSession[]
+  feedbackReports FeedbackReport[]
+  resumeAnalyses  ResumeAnalysis[]
+  roadmaps        Roadmap[]
+
+  @@map("users")
+}
+
+model InterviewSession {
+  id              String             @id @default(uuid())
+  userId          String
+  mode            InterviewMode      @default(standard)
+  status          SessionStatus      @default(created)
+  role            String
+  company         String
+  difficulty      String
+  metadata        Json               @default("{}")
+  startedAt       DateTime?
+  completedAt     DateTime?
+  durationSeconds Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rounds          InterviewRound[]
+  transcripts     Transcript[]
+  behaviorMetrics BehaviorMetric[]
+  emotionStates   EmotionState[]
+  scores          Score[]
+  feedbackReport  FeedbackReport?
+  roadmap         Roadmap[]
+  resumeAnalysis  ResumeAnalysis?
+  eventLogs       EventLog[]
+
+  @@index([userId, createdAt])
+  @@index([status, updatedAt])
+  @@map("interview_sessions")
+}
+
+model InterviewRound {
+  id          String           @id @default(uuid())
+  sessionId   String
+  sequence    Int
+  name        String
+  domain      String
+  status      RoundStatus      @default(pending)
+  startedAt   DateTime?
+  completedAt DateTime?
+  metadata    Json             @default("{}")
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  transcripts Transcript[]
+
+  @@unique([sessionId, sequence])
+  @@index([sessionId, status])
+  @@map("interview_rounds")
+}
+
+model Transcript {
+  id         String            @id @default(uuid())
+  sessionId  String
+  roundId    String?
+  speaker    TranscriptSpeaker
+  content    String
+  sequence   Int
+  startedAt  DateTime?
+  endedAt    DateTime?
+  confidence Float?
+  metadata   Json              @default("{}")
+  createdAt  DateTime          @default(now())
+  session    InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  round      InterviewRound?   @relation(fields: [roundId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, sequence])
+  @@index([sessionId, createdAt])
+  @@map("transcripts")
+}
+
+model BehaviorMetric {
+  id         String           @id @default(uuid())
+  sessionId  String
+  metricType String
+  value      Float
+  confidence Float?
+  source     String
+  capturedAt DateTime         @default(now())
+  metadata   Json             @default("{}")
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, metricType, capturedAt])
+  @@map("behavior_metrics")
+}
+
+model EmotionState {
+  id         String           @id @default(uuid())
+  sessionId  String
+  emotion    String
+  intensity  Float
+  confidence Float?
+  source     String
+  capturedAt DateTime         @default(now())
+  metadata   Json             @default("{}")
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, emotion, capturedAt])
+  @@map("emotion_states")
+}
+
+model Score {
+  id        String           @id @default(uuid())
+  sessionId String
+  domain    String
+  scoreType String
+  value     Float
+  weight    Float            @default(1)
+  metadata  Json             @default("{}")
+  createdAt DateTime         @default(now())
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, domain])
+  @@index([scoreType])
+  @@map("scores")
+}
+
+model FeedbackReport {
+  id                 String           @id @default(uuid())
+  sessionId          String           @unique
+  userId             String
+  overallScore       Float
+  technicalScore     Float
+  communicationScore Float
+  confidenceScore    Float
+  hesitationScore    Float
+  behavioralScore    Float
+  summary            String
+  aiFeedback         Json             @default("{}")
+  behavioralSummary  Json             @default("{}")
+  transcriptSummary  String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  session            InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("feedback_reports")
+}
+
+model Roadmap {
+  id          String           @id @default(uuid())
+  sessionId   String
+  userId      String
+  category    String
+  priority    Int
+  title       String
+  description String
+  actions     Json             @default("[]")
+  dueAfterDays Int?
+  createdAt   DateTime         @default(now())
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, priority])
+  @@map("roadmaps")
+}
+
+model ResumeAnalysis {
+  id              String           @id @default(uuid())
+  sessionId       String?          @unique
+  userId          String
+  resumeTextHash  String
+  extractedSkills Json             @default("[]")
+  missingSkills   Json             @default("[]")
+  atsScore        Float?
+  resumeScore     Float?
+  suggestions     Json             @default("[]")
+  rawAnalysis      Json             @default("{}")
+  createdAt       DateTime         @default(now())
+  session         InterviewSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("resume_analysis")
+}
+
+model EventLog {
+  id            String           @id @default(uuid())
+  sessionId     String?
+  userId        String?
+  type          String
+  severity      EventSeverity    @default(info)
+  correlationId String?
+  payload       Json             @default("{}")
+  occurredAt    DateTime         @default(now())
+  session       InterviewSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([type, occurredAt])
+  @@map("event_logs")
+}

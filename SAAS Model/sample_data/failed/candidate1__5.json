@@ -1,0 +1,22 @@
+[
+  {
+    "external_candidate_id": "YASH-001",
+    "name": "Aarav Mehta",
+    "email": "aarav.mehta@example.com",
+    "phone": "9876543210",
+    "position_name": "Machine Learning Engineer",
+    "resume_score": 94,
+    "skills": ["Python","FastAPI","LangChain","RAG","FAISS","PostgreSQL"],
+    "shortlist_reasons": [
+      "Strong GenAI experience",
+      "Production FastAPI applications",
+      "Excellent RAG implementation",
+      "Vector database expertise",
+      "High JD match"
+    ],
+    "interview_topics": [
+      "RAG",
+      "Prompt Engineering",
+      "Vector Databases"
+    ]
+  },

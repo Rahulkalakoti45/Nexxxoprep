@@ -1,0 +1,17 @@
+{
+  "file_name": "candidates.json",
+  "file_error": null,
+  "total_candidates": 1,
+  "succeeded": 0,
+  "failed": 1,
+  "candidates": [
+    {
+      "index": 1,
+      "identifier": "YASH-001",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(16dcc2e6-f6ad-4008-bb4d-a4e892f8782a) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('9f136d8a-713c-4d21-847e-777e7c20e99c'), 'candidate_id': UUID('16dcc2e6-f6ad-4008-bb4d-a4e892f8782a'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    }
+  ],
+  "failed_at": "2026-07-25T11:47:28Z"
+}

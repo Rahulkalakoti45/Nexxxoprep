@@ -1,0 +1,26 @@
+export const APTITUDE_QUESTIONS = [
+  {
+    id: 'apt-1',
+    company: 'generic',
+    role: 'entry-level',
+    round: 'Aptitude',
+    domain: 'aptitude',
+    difficulty: 'easy',
+    question: 'A person buys an item for 800 and sells it at 15% profit. What is the selling price?',
+    expectedConcepts: ['percentages', 'profit loss', 'arithmetic'],
+    followUpTemplates: ['Can you solve it in one line?', 'How would you verify quickly?'],
+    estimatedTime: 90,
+  },
+  {
+    id: 'apt-2',
+    company: 'generic',
+    role: 'entry-level',
+    round: 'Aptitude',
+    domain: 'aptitude',
+    difficulty: 'medium',
+    question: 'Find the next number in the series: 3, 9, 27, 81, ?',
+    expectedConcepts: ['patterns', 'geometric progression'],
+    followUpTemplates: ['Can you build a similar pattern with + and * mixed?', 'What is the nth term?'],
+    estimatedTime: 75,
+  },
+]

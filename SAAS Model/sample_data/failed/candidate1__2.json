@@ -1,0 +1,13 @@
+{
+  "name": "Rahul Sharma",
+  "email": "vishwasnamdeo69@gmail.com",
+  "phone": "9876543210",
+  "skills": [
+    "Python",
+    "FastAPI",
+    "PostgreSQL"
+  ],
+  "experience_years": 3,
+  "education": "B.Tech Computer Science",
+  "resume_text": "Python developer with 3 years of experience in FastAPI, PostgreSQL, REST APIs and Docker."
+}

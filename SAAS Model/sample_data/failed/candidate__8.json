@@ -1,0 +1,34 @@
+{
+  "candidate_id": "CAND-001",
+  "name": "Rahul Sharma",
+  "email": "@gmail.com",
+  "phone": "9876543210",
+  "resume_score": 94.5,
+  "position_name": "Backend Developer",
+  "skills": [
+    "Python",
+    "FastAPI",
+    "PostgreSQL",
+    "Redis"
+  ],
+  "summary": "Backend developer with 3 years of experience in Python, FastAPI and PostgreSQL.",
+  "experience_level": "3 Years",
+  "jd_match_percentage": 91.2,
+  "strengths": [
+    "REST APIs",
+    "Problem Solving",
+    "Database Design"
+  ],
+  "recommended_role": "Backend Engineer",
+  "shortlist_reasons": [
+    "Excellent Python knowledge",
+    "Good API development experience",
+    "Strong database concepts"
+  ],
+  "interview_topics": [
+    "Python",
+    "FastAPI",
+    "PostgreSQL",
+    "REST API"
+  ]
+}

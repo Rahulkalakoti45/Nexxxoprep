@@ -1,0 +1,16 @@
+from enum import StrEnum
+
+
+class CandidateStatus(StrEnum):
+    SHORTLISTED = "SHORTLISTED"
+    INVITED = "INVITED"
+    INTERVIEW_STARTED = "INTERVIEW_STARTED"
+    INTERVIEW_COMPLETED = "INTERVIEW_COMPLETED"
+    FINAL_SELECTED = "FINAL_SELECTED"
+    REJECTED = "REJECTED"
+
+
+class InterviewSessionStatus(StrEnum):
+    CREATED = "CREATED"
+    EXPIRED = "EXPIRED"
+    CONSUMED = "CONSUMED"

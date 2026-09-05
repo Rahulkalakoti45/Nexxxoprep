@@ -1,0 +1,26 @@
+export const BEHAVIORAL_QUESTIONS = [
+  {
+    id: 'beh-1',
+    company: 'generic',
+    role: 'any',
+    round: 'Behavioral',
+    domain: 'behavioral',
+    difficulty: 'medium',
+    question: 'Tell me about a time when you handled a tight deadline with conflicting priorities.',
+    expectedConcepts: ['prioritization', 'communication', 'ownership'],
+    followUpTemplates: ['How did you communicate risk?', 'What did you improve next time?'],
+    estimatedTime: 180,
+  },
+  {
+    id: 'beh-2',
+    company: 'generic',
+    role: 'any',
+    round: 'Behavioral',
+    domain: 'decision-making',
+    difficulty: 'medium',
+    question: 'Describe a decision you made with incomplete data.',
+    expectedConcepts: ['judgment', 'tradeoffs', 'accountability'],
+    followUpTemplates: ['What signals did you rely on?', 'How did you measure outcome?'],
+    estimatedTime: 180,
+  },
+]

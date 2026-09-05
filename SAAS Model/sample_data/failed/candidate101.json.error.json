@@ -1,0 +1,38 @@
+{
+  "file_name": "candidate101.json",
+  "file_error": null,
+  "total_candidates": 4,
+  "succeeded": 0,
+  "failed": 4,
+  "candidates": [
+    {
+      "index": 1,
+      "identifier": "CAND-SID-001",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(d4ad6435-566c-41a7-b96b-551f43a6c341) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('2295ceed-db85-4484-b477-0562ee6bdb23'), 'candidate_id': UUID('d4ad6435-566c-41a7-b96b-551f43a6c341'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    },
+    {
+      "index": 2,
+      "identifier": "CAND-RAJ-002",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(84611778-0647-400b-8971-dcf544889652) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('407ab7ab-cb4f-4886-be6e-d04b2e3f505e'), 'candidate_id': UUID('84611778-0647-400b-8971-dcf544889652'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    },
+    {
+      "index": 3,
+      "identifier": "CAND-SHR-003",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(058b1b13-86ee-4c11-933c-5ccfcfc628a1) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('4d80a29f-2656-411b-833e-813e0bbfcbf6'), 'candidate_id': UUID('058b1b13-86ee-4c11-933c-5ccfcfc628a1'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    },
+    {
+      "index": 4,
+      "identifier": "CAND-YASH-004",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(5c11fc8d-75f4-477f-aa09-40da56a15757) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('53b7dc63-ba0b-4e21-8309-85b1060d0a9e'), 'candidate_id': UUID('5c11fc8d-75f4-477f-aa09-40da56a15757'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    }
+  ],
+  "failed_at": "2026-07-31T05:17:59Z"
+}

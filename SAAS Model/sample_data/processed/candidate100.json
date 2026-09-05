@@ -1,0 +1,151 @@
+[
+  {
+    "candidate_id": "CAND-SID-001",
+    "name": "Siddhanth Richhariya",
+    "email": "siddhanthrichhariya02@gail.com",
+    "phone": "9876501001",
+    "resume_score": 94.5,
+    "position_name": "AI Backend Engineer",
+    "skills": [
+      "Python",
+      "FastAPI",
+      "PostgreSQL",
+      "Redis",
+      "REST APIs",
+      "Docker"
+    ],
+    "summary": "Backend-focused engineer with experience in Python, FastAPI, REST API development, PostgreSQL and asynchronous application architecture.",
+    "experience_level": "Intermediate",
+    "jd_match_percentage": 93.2,
+    "strengths": [
+      "Backend Development",
+      "API Design",
+      "Database Management",
+      "Problem Solving"
+    ],
+    "recommended_role": "AI Backend Engineer",
+    "shortlist_reasons": [
+      "Strong Python and FastAPI backend development skills",
+      "Good understanding of PostgreSQL and API architecture",
+      "Relevant experience with Redis and asynchronous workflows",
+      "Strong overall match with the technical requirements"
+    ],
+    "interview_topics": [
+      "FastAPI",
+      "REST API Design",
+      "PostgreSQL"
+    ]
+  },
+  {
+    "candidate_id": "CAND-RAJ-002",
+    "name": "Rajshree Sharma",
+    "email": "rajshreesharma015@gmail.com",
+    "phone": "9876501002",
+    "resume_score": 91.8,
+    "position_name": "Full Stack Developer",
+    "skills": [
+      "JavaScript",
+      "React",
+      "Python",
+      "FastAPI",
+      "SQL",
+      "Git"
+    ],
+    "summary": "Full-stack developer with a strong understanding of frontend development, backend APIs, databases and modern web application development.",
+    "experience_level": "Intermediate",
+    "jd_match_percentage": 89.7,
+    "strengths": [
+      "Frontend Development",
+      "Backend Integration",
+      "Web Application Development",
+      "Team Collaboration"
+    ],
+    "recommended_role": "Full Stack Developer",
+    "shortlist_reasons": [
+      "Strong combination of frontend and backend development skills",
+      "Good knowledge of React and modern web development",
+      "Relevant experience with Python APIs and SQL databases",
+      "Good overall technical profile for the position"
+    ],
+    "interview_topics": [
+      "React",
+      "Backend API Integration",
+      "Database Fundamentals"
+    ]
+  },
+  {
+    "candidate_id": "CAND-SHR-003",
+    "name": "Shraddha Rawat",
+    "email": "33rawat.shraddha@gmail.com",
+    "phone": "9876501003",
+    "resume_score": 93.1,
+    "position_name": "Machine Learning Engineer",
+    "skills": [
+      "Python",
+      "Machine Learning",
+      "Pandas",
+      "NumPy",
+      "Scikit-learn",
+      "Data Analysis"
+    ],
+    "summary": "Machine learning engineer with strong Python fundamentals and practical knowledge of data preprocessing, model development and evaluation.",
+    "experience_level": "Intermediate",
+    "jd_match_percentage": 92.4,
+    "strengths": [
+      "Machine Learning",
+      "Data Analysis",
+      "Model Evaluation",
+      "Analytical Thinking"
+    ],
+    "recommended_role": "Machine Learning Engineer",
+    "shortlist_reasons": [
+      "Strong machine learning and Python fundamentals",
+      "Good understanding of data preprocessing and model evaluation",
+      "Relevant experience with common machine learning libraries",
+      "High resume and job-description matching score"
+    ],
+    "interview_topics": [
+      "Machine Learning Fundamentals",
+      "Model Evaluation",
+      "Data Preprocessing"
+    ]
+  },
+  {
+    "candidate_id": "CAND-YASH-004",
+    "name": "Yash Verma",
+    "email": "vermayash2200@gmail.com",
+    "phone": "9876501004",
+    "resume_score": 95.2,
+    "position_name": "Generative AI Engineer",
+    "skills": [
+      "Python",
+      "FastAPI",
+      "RAG",
+      "LangChain",
+      "Vector Databases",
+      "LLMs",
+      "PostgreSQL"
+    ],
+    "summary": "AI engineer with experience in generative AI applications, retrieval augmented generation, LLM integration, backend APIs and vector-based information retrieval.",
+    "experience_level": "Intermediate",
+    "jd_match_percentage": 95.6,
+    "strengths": [
+      "Generative AI",
+      "RAG Architecture",
+      "LLM Integration",
+      "Backend Development"
+    ],
+    "recommended_role": "Generative AI Engineer",
+    "shortlist_reasons": [
+      "Strong experience with Generative AI and RAG architectures",
+      "Relevant knowledge of LLM integration and vector databases",
+      "Good Python and FastAPI backend development skills",
+      "Excellent overall match with the AI engineering requirements"
+    ],
+    "interview_topics": [
+      "RAG Architecture",
+      "Large Language Models",
+      "Vector Databases"
+    ]
+  }
+]

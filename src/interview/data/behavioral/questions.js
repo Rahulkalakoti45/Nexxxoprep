@@ -1,0 +1,31 @@
+﻿export const BEHAVIORAL_QUESTIONS = [
+  {
+    id: 'beh-gen-1', company: 'General', role: 'SDE', round: 'Behavioral', domain: 'Behavioral', difficulty: 'Medium',
+    question: 'Tell me about a time you had to make a decision with incomplete information.',
+    expectedConcepts: ['decision-making', 'risk', 'outcome'], followUpTemplates: ['How did you communicate uncertainty?'], estimatedTime: 180,
+  },
+  {
+    id: 'beh-gen-2',
+    company: 'General',
+    role: 'SDE',
+    round: 'Behavior + Communication',
+    domain: 'Communication',
+    difficulty: 'Medium',
+    question: 'Describe a time you explained a technical decision to non-technical stakeholders.',
+    expectedConcepts: ['clarity', 'audience adaptation', 'alignment'],
+    followUpTemplates: ['How did you confirm they understood the trade-offs?'],
+    estimatedTime: 180,
+  },
+  {
+    id: 'beh-amz-1',
+    company: 'Amazon',
+    role: 'SDE',
+    round: 'Leadership Principles + Behavioral',
+    domain: 'Decision Making',
+    difficulty: 'Medium',
+    question: 'Share a situation where you took ownership beyond your defined scope.',
+    expectedConcepts: ['ownership', 'initiative', 'impact'],
+    followUpTemplates: ['What principle guided your decision?'],
+    estimatedTime: 180,
+  },
+]

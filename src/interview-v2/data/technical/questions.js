@@ -1,0 +1,26 @@
+export const TECHNICAL_QUESTIONS = [
+  {
+    id: 'tech-1',
+    company: 'generic',
+    role: 'software engineer',
+    round: 'Technical',
+    domain: 'technical',
+    difficulty: 'medium',
+    question: 'Explain the difference between process and thread with real-world examples.',
+    expectedConcepts: ['concurrency', 'memory isolation', 'scheduling'],
+    followUpTemplates: ['When would multithreading hurt performance?', 'How does context switching affect throughput?'],
+    estimatedTime: 150,
+  },
+  {
+    id: 'tech-2',
+    company: 'generic',
+    role: 'software engineer',
+    round: 'Technical',
+    domain: 'coding',
+    difficulty: 'medium',
+    question: 'How would you design a function to detect duplicate records in a large dataset?',
+    expectedConcepts: ['hashing', 'streaming', 'memory tradeoff'],
+    followUpTemplates: ['How would you avoid false positives?', 'How would you scale this approach?'],
+    estimatedTime: 210,
+  },
+]

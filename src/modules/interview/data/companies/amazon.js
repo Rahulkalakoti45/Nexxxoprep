@@ -1,0 +1,86 @@
+const company = 'Amazon'
+
+const rounds = [
+  { id: 'amz-r1', label: 'Resume + Project Discussion', domain: 'resume' },
+  { id: 'amz-r2', label: 'DSA + Coding', domain: 'dsa' },
+  { id: 'amz-r3', label: 'System Design', domain: 'system-design' },
+  { id: 'amz-r4', label: 'Leadership Principles + Behavioral', domain: 'behavioral' },
+]
+
+const questions = [
+  {
+    id: 'amz-res-1',
+    company,
+    role: 'SDE',
+    round: 'Resume + Project Discussion',
+    domain: 'project',
+    difficulty: 'Medium',
+    question: 'Pick one project from your resume. What was the customer problem, and what measurable impact did you deliver?',
+    expectedConcepts: ['customer obsession', 'metrics', 'ownership'],
+    followUpTemplates: ['What tradeoff did you make?', 'How did you validate the impact?'],
+    estimatedTime: 240,
+  },
+  {
+    id: 'amz-res-2',
+    company,
+    role: 'SDE',
+    round: 'Resume + Project Discussion',
+    domain: 'resume',
+    difficulty: 'Medium',
+    question: 'Tell me about a time you owned a problem end-to-end. What did you do when you were blocked?',
+    expectedConcepts: ['ownership', 'bias for action', 'communication'],
+    followUpTemplates: ['How did you prioritize?', 'What did you learn?'],
+    estimatedTime: 210,
+  },
+  {
+    id: 'amz-dsa-1',
+    company,
+    role: 'SDE',
+    round: 'DSA + Coding',
+    domain: 'dsa',
+    difficulty: 'Easy',
+    question: 'Given an array, return the first pair that sums to a target. Discuss time and space complexity.',
+    expectedConcepts: ['hashmap', 'complexity', 'edge cases'],
+    followUpTemplates: ['What if the array is sorted?', 'How would you handle duplicates?'],
+    estimatedTime: 300,
+  },
+  {
+    id: 'amz-dsa-2',
+    company,
+    role: 'SDE',
+    round: 'DSA + Coding',
+    domain: 'coding',
+    difficulty: 'Hard',
+    question: 'Design an algorithm to compute the median of a streaming dataset with low latency.',
+    expectedConcepts: ['heaps', 'invariants', 'complexity'],
+    followUpTemplates: ['How do you test correctness?', 'How does it scale with skewed data?'],
+    estimatedTime: 360,
+  },
+  {
+    id: 'amz-sd-1',
+    company,
+    role: 'SDE',
+    round: 'System Design',
+    domain: 'system-design',
+    difficulty: 'Hard',
+    question: 'Design a URL shortener with custom aliases, analytics, and abuse prevention.',
+    expectedConcepts: ['api design', 'database', 'caching', 'rate limiting'],
+    followUpTemplates: ['How do you handle hot keys?', 'How do you ensure id uniqueness?'],
+    estimatedTime: 420,
+  },
+  {
+    id: 'amz-lp-1',
+    company,
+    role: 'SDE',
+    round: 'Leadership Principles + Behavioral',
+    domain: 'behavioral',
+    difficulty: 'Medium',
+    question: 'Tell me about a time you disagreed and committed. What was the outcome?',
+    expectedConcepts: ['disagree and commit', 'communication', 'ownership'],
+    followUpTemplates: ['What did you learn?', 'How did you rebuild trust?'],
+    estimatedTime: 210,
+  },
+]
+
+export default { company, rounds, questions }
+

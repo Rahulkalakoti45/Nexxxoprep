@@ -1,0 +1,24 @@
+{
+  "file_name": "candidate121.json",
+  "file_error": null,
+  "total_candidates": 2,
+  "succeeded": 0,
+  "failed": 2,
+  "candidates": [
+    {
+      "index": 1,
+      "identifier": "CAND-DEMO-005",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(6554a2e4-1f15-4dd0-96b0-f877c2459a79) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('2a5b6469-8116-4802-bb01-ee60279d0028'), 'candidate_id': UUID('6554a2e4-1f15-4dd0-96b0-f877c2459a79'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    },
+    {
+      "index": 2,
+      "identifier": "CAND-DEMO-006",
+      "success": false,
+      "session_uuid": null,
+      "error": "Failed to process shortlist: (psycopg.errors.UniqueViolation) duplicate key value violates unique constraint \"candidate_notifications_candidate_id_key\"\nDETAIL:  Key (candidate_id)=(f21278e2-00af-4f84-b0f8-b84cfc13eaf6) already exists.\n[SQL: INSERT INTO candidate_notifications (id, candidate_id, email_sent, sent_at, email_opened, opened_at, interview_started, interview_completed) VALUES (%(id)s::UUID, %(candidate_id)s::UUID, %(email_sent)s, %(sent_at)s::TIMESTAMP WITH TIME ZONE, %(email_opened)s, %(opened_at)s::TIMESTAMP WITH TIME ZONE, %(interview_started)s, %(interview_completed)s)]\n[parameters: {'id': UUID('15c8bd81-af34-4af9-ab93-5b03c35f0d9b'), 'candidate_id': UUID('f21278e2-00af-4f84-b0f8-b84cfc13eaf6'), 'email_sent': False, 'sent_at': None, 'email_opened': False, 'opened_at': None, 'interview_started': False, 'interview_completed': False}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+    }
+  ],
+  "failed_at": "2026-07-31T05:42:57Z"
+}

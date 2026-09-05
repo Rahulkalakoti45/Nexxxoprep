@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "references": [
+    { "path": "../../packages/types" },
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/config" },
+    { "path": "../../packages/database" },
+    { "path": "../../packages/events" },
+    { "path": "../../services/memory-service" },
+    { "path": "../../services/session-service" },
+    { "path": "../../services/report-service" },
+    { "path": "../../services/analytics-service" },
+    { "path": "../../services/unified-report-service" }
+  ],
+  "include": ["src/**/*.ts"]
+}
