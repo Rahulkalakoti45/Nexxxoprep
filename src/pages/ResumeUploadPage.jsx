@@ -5,11 +5,9 @@ import { analyzeResume } from '../utils/resumeAnalyzer.js'
 import { analyzeResumeWithAI, optimizeResumeWithAI } from '../services/openaiService.js'
 import { analyzeResume as analyzeResumeApi } from '../services/backend/resumeApi.js'
 import * as pdfjsLib from 'pdfjs-dist'
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url,
-).toString()
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
 export default function ResumeUploadPage() {
   const navigate = useNavigate()
@@ -43,8 +41,14 @@ export default function ResumeUploadPage() {
           const pageText = content.items.map((item) => item.str).join(' ')
           fullText += pageText + '\n'
         }
-        setResumeText(fullText.trim())
+        const extracted = fullText.trim()
+        if (extracted.length < 30) {
+          setAiError('This PDF has no selectable text (likely a scanned image). Please paste your resume text manually.')
+        } else {
+          setResumeText(extracted)
+        }
       } catch (err) {
+        console.error('[resume-pdf-extract]', err)
         setAiError('Could not auto-extract PDF text. Please paste your resume text manually.')
       }
     }
