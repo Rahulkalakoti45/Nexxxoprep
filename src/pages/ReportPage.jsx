@@ -15,10 +15,15 @@ import BehaviorReportSection from '../features/behavior/BehaviorReportSection.js
 import { getSession } from '../services/backend/sessionsApi.js'
 import { mapSessionToReport } from '../utils/reportMapper.js'
 
+const CLASSIC_DOMAINS = ['DSA', 'System Design', 'HR']
+
 function domainChartData(domainBreakdown) {
-  const wanted = ['DSA', 'System Design', 'HR']
+  // The classic interview scores DSA / System Design / HR. A conversational interview groups its
+  // questions by whatever topics actually came up, so those are shown as they are.
+  const rows = domainBreakdown || []
+  const wanted = rows.every((item) => CLASSIC_DOMAINS.includes(item.domain)) ? CLASSIC_DOMAINS : rows.map((item) => item.domain)
   return wanted.map((domain) => {
-    const found = domainBreakdown?.find((item) => item.domain === domain)
+    const found = rows.find((item) => item.domain === domain)
     return { domain, score: found?.avgScore ?? 0 }
   })
 }
@@ -139,7 +144,7 @@ export default function ReportPage() {
           </article>
           <article className="rounded-xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/5">
             <p className="text-sm text-slate-400">Questions</p>
-            <p className="mt-2 text-3xl font-semibold">{activeReport.answers.length}</p>
+            <p className="mt-2 text-3xl font-semibold">{activeReport.questionCount ?? activeReport.answers.length}</p>
           </article>
         </div>
       </section>
@@ -151,7 +156,12 @@ export default function ReportPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={domainBars}>
                 <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                <XAxis dataKey="domain" stroke="#94a3b8" />
+                <XAxis
+                  dataKey="domain"
+                  stroke="#94a3b8"
+                  interval={0}
+                  tickFormatter={(name) => (name.length > 15 ? `${name.slice(0, 14)}…` : name)}
+                />
                 <YAxis stroke="#94a3b8" domain={[0, 100]} />
                 <Tooltip />
                 <Bar dataKey="score" fill="#e2e8f0" radius={[6, 6, 0, 0]} />

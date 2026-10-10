@@ -159,15 +159,26 @@ export class EvidenceExtractionService {
     notes: string[],
   ): { entries: EvidenceTranscriptEntry[]; source: EvidenceSource } {
     if (transcriptRows.length) {
-      return {
-        source: 'transcript_table',
-        entries: transcriptRows.map((row) => ({
+      const entries: EvidenceTranscriptEntry[] = []
+      let duplicates = 0
+      for (const row of transcriptRows) {
+        const entry: EvidenceTranscriptEntry = {
           sequence: row.sequence,
           speaker: row.speaker as EvidenceTranscriptEntry['speaker'],
           content: row.content,
           at: row.createdAt ? row.createdAt.toISOString() : null,
-        })),
+        }
+        // The voice transport can deliver the same interviewer line twice in a row. That is one
+        // question, not two, so it must not inflate the question count or the prompt.
+        const previous = entries[entries.length - 1]
+        if (previous && this.isInterviewer(previous) && this.isInterviewer(entry) && this.sameText(previous.content, entry.content)) {
+          duplicates += 1
+          continue
+        }
+        entries.push(entry)
       }
+      if (duplicates) notes.push(`Ignored ${duplicates} interviewer transcript line(s) that repeated the previous line verbatim.`)
+      return { source: 'transcript_table', entries }
     }
 
     if (memory.recentTranscript.length) {
@@ -293,6 +304,15 @@ export class EvidenceExtractionService {
       qualityDistribution,
       perAnswer,
     }
+  }
+
+  private isInterviewer(entry: EvidenceTranscriptEntry): boolean {
+    return entry.speaker === 'interviewer' || entry.speaker === 'ai'
+  }
+
+  private sameText(a: string, b: string): boolean {
+    const normalize = (text: string) => text.trim().replace(/\s+/g, ' ').toLowerCase()
+    return normalize(a) === normalize(b)
   }
 
   private wordCount(text: string): number {

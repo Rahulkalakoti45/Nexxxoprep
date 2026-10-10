@@ -47,6 +47,20 @@ export interface AnswerScore {
   answerPreview: string
 }
 
+/** 0-10 ratings written from the transcript when per-answer scoring did not run during the interview. */
+export interface SummaryDimensionScores {
+  technical: number
+  communication: number
+  confidence: number
+}
+
+/** The answered questions grouped by topic, with a 0-10 score for each group. */
+export interface SummaryDomainScore {
+  domain: string
+  score: number
+  questions: number
+}
+
 export interface InterviewSummary {
   strengths: string[]
   weaknesses: string[]
@@ -54,6 +68,8 @@ export interface InterviewSummary {
   recommendations: string[]
   overallRating: number
   generatedAt: string
+  dimensionScores?: SummaryDimensionScores
+  domainScores?: SummaryDomainScore[]
 }
 
 export interface FollowUpDirective {

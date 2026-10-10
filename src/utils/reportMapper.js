@@ -71,6 +71,42 @@ function parseAiFeedback(aiFeedback) {
   return aiFeedback
 }
 
+// Voice interviews are scored by the AI interviewer, not answer by answer, so the numbers below are
+// measured from the transcript that was saved with the session instead of being left at zero.
+// The definitions follow the classic interview flow (interviewService.computePatternAnalysis).
+const HEDGE_PATTERN = /\b(maybe|not sure|i think|i guess)\b/gi
+const FILLER_PATTERN = /\b(um+|uh+|like|you know|basically|actually|literally|sort of|kind of)\b/gi
+
+function wordCount(text) {
+  return text.split(/\s+/).filter(Boolean).length
+}
+
+function countMatches(text, pattern) {
+  return (text.match(pattern) || []).length
+}
+
+/** The question/answer pairs in which the candidate actually said something. */
+export function answeredPairs(evidence) {
+  const pairs = Array.isArray(evidence?.questionsAnswered) ? evidence.questionsAnswered : []
+  return pairs.filter((pair) => pair && typeof pair.answer === 'string' && pair.answer.trim())
+}
+
+export function deriveAnswerPatterns(answered) {
+  if (!answered.length) {
+    return { averageAnswerLength: 0, hesitationScore: 0, consistencyScore: 0, hedgeCount: 0, fillerCount: 0 }
+  }
+  const lengths = answered.map((pair) => wordCount(pair.answer))
+  const averageAnswerLength = Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length)
+  const hesitantAnswers = answered.filter((pair) => countMatches(pair.answer, HEDGE_PATTERN) > 0).length
+  return {
+    averageAnswerLength,
+    hesitationScore: Math.round((hesitantAnswers / answered.length) * 100),
+    consistencyScore: Math.max(35, Math.round(90 - Math.min(45, Math.abs(65 - averageAnswerLength) * 0.8))),
+    hedgeCount: answered.reduce((sum, pair) => sum + countMatches(pair.answer, HEDGE_PATTERN), 0),
+    fillerCount: answered.reduce((sum, pair) => sum + countMatches(pair.answer, FILLER_PATTERN), 0),
+  }
+}
+
 export function mapBackendReportToUi(report) {
   const feedback = parseAiFeedback(report?.aiFeedback)
   const stored = feedback?.uiReport
@@ -101,11 +137,26 @@ export function mapBackendReportToUi(report) {
     ? roadmapRows.map((row) => row.description || row.title).filter(Boolean)
     : interviewSummary?.recommendations || []
 
-  const domainBreakdown = scoreRows.map((s) => ({
-    domain: s.domain,
-    avgScore: Math.round(s.value ?? 0),
-    count: 1,
-  }))
+  // The topics the questions fell into, as scored by the evidence-grounded summary; otherwise the
+  // stored score rows (minus the overall rating, which is not a domain).
+  const summaryDomains = Array.isArray(interviewSummary?.domainScores) ? interviewSummary.domainScores : []
+  const domainBreakdown = summaryDomains.length
+    ? summaryDomains.map((d) => ({
+        domain: d.domain,
+        avgScore: Math.round((d.score ?? 0) * 10),
+        count: d.questions ?? 1,
+      }))
+    : scoreRows
+        .filter((s) => s.domain !== 'overall')
+        .map((s) => ({
+          domain: s.domain,
+          avgScore: Math.round(s.value ?? 0),
+          count: 1,
+        }))
+
+  const evidence = session.metadata?.evidence && typeof session.metadata.evidence === 'object' ? session.metadata.evidence : null
+  const answered = answeredPairs(evidence)
+  const patterns = deriveAnswerPatterns(answered)
 
   return {
     id: report.id,
@@ -123,16 +174,23 @@ export function mapBackendReportToUi(report) {
     durationSeconds: session.durationSeconds || 0,
     domainBreakdown,
     answers: [],
+    questionCount: answered.length,
     weaknessSummary: interviewSummary?.weaknesses || [],
     strengthsSummary: interviewSummary?.strengths || [],
     keyTopics: interviewSummary?.keyTopics || [],
     patternAnalysis: {
-      averageAnswerLength: 0,
-      hesitationScore: report.hesitationScore ?? 0,
-      consistencyScore: 0,
+      averageAnswerLength: patterns.averageAnswerLength,
+      hesitationScore: answered.length ? patterns.hesitationScore : (report.hesitationScore ?? 0),
+      consistencyScore: patterns.consistencyScore,
     },
     roadmap: { dailyPlan: roadmapItems, weeklyGoals: [], monthlyGoals: [] },
-    intelligence: {},
+    intelligence: {
+      patternAnalysis: {
+        hesitationWordsDetected: patterns.hedgeCount,
+        fillerWordsDetected: patterns.fillerCount,
+        skippedDomains: [],
+      },
+    },
   }
 }
 

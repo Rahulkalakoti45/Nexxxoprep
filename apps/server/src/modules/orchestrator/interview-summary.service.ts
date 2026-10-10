@@ -1,4 +1,10 @@
-import type { AnswerScore, InterviewEvidence, InterviewSummary } from '@nexoprep/types'
+import type {
+  AnswerScore,
+  InterviewEvidence,
+  InterviewSummary,
+  SummaryDimensionScores,
+  SummaryDomainScore,
+} from '@nexoprep/types'
 import type { ConversationMemory } from '../conversation/memory.service.js'
 import { GeminiService } from './gemini.service.js'
 
@@ -40,6 +46,63 @@ Never invent recommendations.
 Recommendations must directly correspond to observed weaknesses.
 
 Strengths must directly correspond to observed evidence.`
+
+/** Gemini sometimes wraps its JSON in a markdown fence or adds a sentence around it. */
+export function parseJsonObject(raw: string): Record<string, unknown> {
+  const text = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim()
+  try {
+    return JSON.parse(text) as Record<string, unknown>
+  } catch (error) {
+    const start = text.indexOf('{')
+    const end = text.lastIndexOf('}')
+    if (start === -1 || end <= start) throw error
+    return JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>
+  }
+}
+
+/** A number (or numeric string) clamped to 0-10 with one decimal, or null when it is not a number. */
+export function clampScore(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() ? Number(value) : Number.NaN
+  if (!Number.isFinite(n)) return null
+  return Math.round(Math.min(Math.max(n, 0), 10) * 10) / 10
+}
+
+export function parseDimensionScores(parsed: Record<string, unknown>): SummaryDimensionScores | undefined {
+  const technical = clampScore(parsed.technicalScore)
+  const communication = clampScore(parsed.communicationScore)
+  const confidence = clampScore(parsed.confidenceScore)
+  if (technical === null || communication === null || confidence === null) return undefined
+  return { technical, communication, confidence }
+}
+
+export function parseDomainScores(value: unknown): SummaryDomainScore[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const rows: SummaryDomainScore[] = []
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue
+    const { domain, score, questions } = item as Record<string, unknown>
+    const label = typeof domain === 'string' ? domain.trim().slice(0, 40) : ''
+    const parsedScore = clampScore(score)
+    if (!label || parsedScore === null) continue
+    const count = typeof questions === 'number' && Number.isFinite(questions) ? Math.max(1, Math.round(questions)) : 1
+    rows.push({ domain: label, score: parsedScore, questions: count })
+  }
+  return rows.length ? rows.slice(0, 8) : undefined
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim())
+}
+
+/** Report scores are stored on a 0-100 scale (the report page shows them as percentages). */
+const toPercent = (rating: number): number => Math.round(Math.min(Math.max(rating, 0), 10) * 10)
 
 export class InterviewSummaryService {
   constructor(private readonly gemini: GeminiService) {}
@@ -91,9 +154,12 @@ export class InterviewSummaryService {
     try {
       const userPrompt = this.buildEvidencePrompt(evidence)
       const raw = await this.gemini.generateText(EVIDENCE_GROUNDED_SYSTEM_PROMPT, userPrompt)
-      const parsed = JSON.parse(raw) as Partial<InterviewSummary>
+      const parsed = parseJsonObject(raw)
       return this.groundAgainstEvidence(parsed, evidence, heuristic)
-    } catch {
+    } catch (error) {
+      // Falling back is deliberate (a report must still be stored), but never silently:
+      // an unexplained "Not Evaluated" report is impossible to diagnose.
+      console.error('[SUMMARY] grounded Gemini summary failed; using the evidence-only fallback', error)
       return heuristic
     }
   }
@@ -116,7 +182,7 @@ export class InterviewSummaryService {
         strongTopics: summary.strengths,
         weakTopics: summary.weaknesses,
       },
-      scores: this.toScoreInputs(scores, summary.overallRating),
+      scores: this.toScoreInputs(scores, summary),
     }
   }
 
@@ -158,7 +224,16 @@ export class InterviewSummaryService {
       JSON.stringify(evidenceForPrompt),
       '',
       `Remember: role, company, and difficulty above are context only — never a basis for inferring skills. Any technology, algorithm, framework, or tool you mention must appear in technicalTopics, resumeContext, questionsAnswered, or communicationEvidence above. If a category has no supporting evidence, write "${NOT_EVALUATED}" for it.`,
-      'Return ONLY valid JSON with keys: strengths (string[]), weaknesses (string[]), keyTopics (string[]), recommendations (string[]), overallRating (number 0-10).',
+      '',
+      "Scoring rules. Every score is a number from 0 to 10 and is judged ONLY from the candidate's actual answers in questionsAnswered:",
+      '- technicalScore: correctness and depth of the technical content in the answers.',
+      '- communicationScore: clarity, structure and completeness of the answers.',
+      "- confidenceScore: how assured the delivery is; many filler words (communicationEvidence.fillerWordCount) or \"I don't know\" answers lower it.",
+      '- overallRating: your overall judgement of the interview.',
+      '- domainScores: group the ANSWERED questions by topic using short labels such as "Resume & Projects", "Frontend" or "Behavioral", and give each group a score and the number of answered questions in it.',
+      'A candidate who did not answer, or who said they did not know, must receive a low score for that topic, never a missing one.',
+      '',
+      'Return ONLY valid JSON with keys: strengths (string[]), weaknesses (string[]), keyTopics (string[]), recommendations (string[]), overallRating (number 0-10), technicalScore (number 0-10), communicationScore (number 0-10), confidenceScore (number 0-10), domainScores (array of {"domain": string, "score": number 0-10, "questions": integer}).',
     ].join('\n')
   }
 
@@ -166,26 +241,35 @@ export class InterviewSummaryService {
    * Defense in depth: even with explicit prompt instructions, an LLM can
    * still hallucinate. keyTopics is the field most directly about
    * technologies/algorithms/frameworks, so it is checked against the actual
-   * evidence vocabulary and anything unsupported is dropped. Every other
-   * field falls back to the evidence-only heuristic whenever Gemini returns
-   * nothing usable for it.
+   * evidence (skills, topics and the words of the interview itself) and
+   * anything unsupported is dropped. Every other field falls back to the
+   * evidence-only heuristic whenever Gemini returns nothing usable for it.
    */
-  private groundAgainstEvidence(
-    parsed: Partial<InterviewSummary>,
+  groundAgainstEvidence(
+    parsed: Record<string, unknown>,
     evidence: InterviewEvidence,
     heuristic: InterviewSummary,
   ): InterviewSummary {
     const vocabulary = this.buildEvidenceVocabulary(evidence)
-    const groundedKeyTopics = this.filterToVocabulary(parsed.keyTopics, vocabulary)
+    const evidenceText = this.buildEvidenceText(evidence)
+    const groundedKeyTopics = this.filterToEvidence(asStringArray(parsed.keyTopics), vocabulary, evidenceText)
+    const strengths = asStringArray(parsed.strengths)
+    const weaknesses = asStringArray(parsed.weaknesses)
+    const recommendations = asStringArray(parsed.recommendations)
 
-    return {
-      strengths: parsed.strengths?.length ? parsed.strengths : heuristic.strengths,
-      weaknesses: parsed.weaknesses?.length ? parsed.weaknesses : heuristic.weaknesses,
+    const summary: InterviewSummary = {
+      strengths: strengths.length ? strengths : heuristic.strengths,
+      weaknesses: weaknesses.length ? weaknesses : heuristic.weaknesses,
       keyTopics: groundedKeyTopics.length ? groundedKeyTopics : heuristic.keyTopics,
-      recommendations: parsed.recommendations?.length ? parsed.recommendations : heuristic.recommendations,
-      overallRating: typeof parsed.overallRating === 'number' ? parsed.overallRating : heuristic.overallRating,
+      recommendations: recommendations.length ? recommendations : heuristic.recommendations,
+      overallRating: clampScore(parsed.overallRating) ?? heuristic.overallRating,
       generatedAt: new Date().toISOString(),
     }
+    const dimensionScores = parseDimensionScores(parsed)
+    if (dimensionScores) summary.dimensionScores = dimensionScores
+    const domainScores = parseDomainScores(parsed.domainScores)
+    if (domainScores) summary.domainScores = domainScores
+    return summary
   }
 
   private buildEvidenceVocabulary(evidence: InterviewEvidence): Set<string> {
@@ -200,8 +284,15 @@ export class InterviewSummaryService {
     return new Set(terms.map((term) => term.toLowerCase().trim()).filter(Boolean))
   }
 
-  private filterToVocabulary(topics: string[] | undefined, vocabulary: Set<string>): string[] {
-    if (!topics?.length || vocabulary.size === 0) return []
+  /** Everything said in the interview, lower-cased: what a topic must be traceable to. */
+  private buildEvidenceText(evidence: InterviewEvidence): string {
+    return evidence.questionsAnswered
+      .flatMap((pair) => [pair.question, pair.answer ?? ''])
+      .join('\n')
+      .toLowerCase()
+  }
+
+  private filterToEvidence(topics: string[], vocabulary: Set<string>, evidenceText: string): string[] {
     return topics.filter((topic) => {
       const normalized = topic.toLowerCase().trim()
       if (!normalized) return false
@@ -209,25 +300,41 @@ export class InterviewSummaryService {
       for (const term of vocabulary) {
         if (term.length > 2 && (normalized.includes(term) || term.includes(normalized))) return true
       }
-      return false
+      // Voice interviews have no pre-computed topic lists, so a topic is also grounded when it
+      // was actually spoken: either verbatim or with every one of its words appearing. An
+      // acronym added in brackets, as in "Client-Side Rendering (CSR)", is not held against it.
+      if (evidenceText.includes(normalized)) return true
+      const spoken = normalized.replace(/\([^)]*\)/g, ' ')
+      const words = spoken.match(/[a-z0-9+#.]+/g)?.filter((word) => word.length > 2) ?? []
+      return words.length > 0 && words.every((word) => evidenceText.includes(word))
     })
   }
 
-  private toScoreInputs(scores: AnswerScore[], overallRating: number) {
+  /** Scores are rated 0-10 internally and stored 0-100, the scale the report page displays. */
+  private toScoreInputs(scores: AnswerScore[], summary: InterviewSummary) {
+    const overall = { domain: 'overall', scoreType: 'interview_rating', value: toPercent(summary.overallRating), weight: 1 }
+
     if (!scores.length) {
+      // No per-answer scoring happened during the interview (voice interviews run entirely on
+      // ElevenLabs), so the dimension ratings come from the transcript evaluation instead.
+      const dimensions = summary.dimensionScores
+      if (!dimensions) return [overall]
       return [
-        { domain: 'overall', scoreType: 'interview_rating', value: overallRating, weight: 1 },
+        overall,
+        { domain: 'technical', scoreType: 'technical_depth', value: toPercent(dimensions.technical), weight: 1 },
+        { domain: 'communication', scoreType: 'communication', value: toPercent(dimensions.communication), weight: 1 },
+        { domain: 'confidence', scoreType: 'confidence', value: toPercent(dimensions.confidence), weight: 1 },
       ]
     }
 
     const latest = scores[scores.length - 1] as AnswerScore
     return [
-      { domain: 'overall', scoreType: 'interview_rating', value: overallRating, weight: 1 },
-      { domain: 'technical', scoreType: 'technical_depth', value: latest.technicalDepth, weight: 1 },
-      { domain: 'communication', scoreType: 'communication', value: latest.communication, weight: 1 },
-      { domain: 'communication', scoreType: 'clarity', value: latest.clarity, weight: 1 },
-      { domain: 'technical', scoreType: 'completeness', value: latest.completeness, weight: 1 },
-      { domain: 'confidence', scoreType: 'confidence', value: latest.confidence, weight: 1 },
+      overall,
+      { domain: 'technical', scoreType: 'technical_depth', value: toPercent(latest.technicalDepth), weight: 1 },
+      { domain: 'communication', scoreType: 'communication', value: toPercent(latest.communication), weight: 1 },
+      { domain: 'communication', scoreType: 'clarity', value: toPercent(latest.clarity), weight: 1 },
+      { domain: 'technical', scoreType: 'completeness', value: toPercent(latest.completeness), weight: 1 },
+      { domain: 'confidence', scoreType: 'confidence', value: toPercent(latest.confidence), weight: 1 },
     ]
   }
 

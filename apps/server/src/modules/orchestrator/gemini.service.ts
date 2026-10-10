@@ -270,7 +270,16 @@ export class GeminiService {
     }
   }
 
-  async generateText(systemPrompt: string, userPrompt: string): Promise<string> {
+  /**
+   * Buffered JSON-mode generation (used for the evidence-grounded interview report).
+   *
+   * gemini-2.5 models "think" before answering, and those thinking tokens count against
+   * maxOutputTokens. With a small cap the model can spend nearly the whole budget thinking and
+   * return a few dozen tokens of cut-off JSON that nobody can parse. The report only restructures
+   * evidence that is already in the prompt, so thinking is switched off for the flash models
+   * (where that is allowed) and the output budget is generous.
+   */
+  async generateText(systemPrompt: string, userPrompt: string, options: { maxOutputTokens?: number } = {}): Promise<string> {
     if (!this.isConfigured()) {
       throw new AppError('Gemini is not configured', { code: 'SERVICE_UNAVAILABLE', statusCode: 503 })
     }
@@ -284,8 +293,9 @@ export class GeminiService {
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
       generationConfig: {
         temperature: 0.4,
-        maxOutputTokens: 1024,
+        maxOutputTokens: options.maxOutputTokens ?? 4096,
         responseMimeType: 'application/json',
+        ...(/gemini-2\.5-flash/i.test(model) ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
       },
     }
 
@@ -332,7 +342,7 @@ export class GeminiService {
     }
 
     const json = (await response.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>
       error?: { message?: string; code?: number; status?: string }
     }
     console.log('[GEMINI_RAW_RESPONSE]', {
@@ -342,6 +352,10 @@ export class GeminiService {
       error: json.error ?? null,
       preview: JSON.stringify(json).slice(0, 800),
     })
+    if (json.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+      // Cut-off JSON cannot be parsed; fail loudly so the caller logs the real reason.
+      throw new AppError('Gemini output was truncated (MAX_TOKENS)', { code: 'UPSTREAM_ERROR', statusCode: 502 })
+    }
     return json.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || ''
   }
 }
