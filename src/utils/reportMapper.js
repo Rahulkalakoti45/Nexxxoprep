@@ -149,8 +149,46 @@ export function mapBackendReportsList(reports) {
  */
 export function mapSessionToReport(session) {
   if (!session || !session.feedbackReport) return null
-  return mapBackendReportToUi({
-    ...session.feedbackReport,
-    session,
-  })
+  return {
+    ...mapBackendReportToUi({
+      ...session.feedbackReport,
+      session,
+    }),
+    behavior: mapBehaviorReport(session.metadata?.behaviorReport),
+  }
+}
+
+/**
+ * Normalises session.metadata.behaviorReport for the report page. Two writers fill that slot:
+ * the in-browser analysis (source 'browser', with a full aggregation) and the server-side
+ * Python engine (a pointer plus four headline numbers). Returns null when nothing was measured.
+ */
+export function mapBehaviorReport(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const aggregation = raw.aggregation && typeof raw.aggregation === 'object' ? raw.aggregation : null
+  const num = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null)
+
+  const overall = num(raw.behaviorScore ?? aggregation?.avgScores?.overall)
+  const engagement = num(raw.engagementScore ?? aggregation?.avgScores?.engagement)
+  const attention = num(raw.attentionScore ?? aggregation?.avgScores?.attention)
+  if (overall === null && engagement === null && attention === null) return null
+
+  return {
+    source: raw.source === 'browser' ? 'browser' : 'engine',
+    // The browser analysis saves progress as it goes; without a final save the numbers cover
+    // only the part of the interview that was captured.
+    partial: raw.source === 'browser' && !raw.finalizedAt,
+    overall,
+    engagement,
+    attention,
+    warningCount: num(raw.warningCount ?? aggregation?.totalEvents),
+    durationSeconds: num(aggregation?.durationSeconds),
+    scores: aggregation?.avgScores ?? null,
+    percentages: aggregation?.percentages ?? null,
+    gestureObserved: aggregation?.gestureObserved ?? true,
+    strongestSignal: aggregation?.strongestSignal ?? null,
+    weakestSignal: aggregation?.weakestSignal ?? null,
+    trends: aggregation?.trends ?? null,
+    events: Array.isArray(aggregation?.events) ? aggregation.events : [],
+  }
 }

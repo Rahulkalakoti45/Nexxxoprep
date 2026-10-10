@@ -46,6 +46,7 @@ export async function apiRequest(path, options = {}) {
     headers = {},
     retries = DEFAULT_RETRIES,
     signal,
+    keepalive,
   } = options
 
   const url = `${getApiBaseUrl()}${path.startsWith('/') ? path : `/${path}`}`
@@ -68,6 +69,7 @@ export async function apiRequest(path, options = {}) {
         headers: requestHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal,
+        keepalive, // lets a request outlive the page, e.g. a last save while navigating away
       })
 
       const data = await parseResponse(response)

@@ -18,10 +18,12 @@
     "start:server": "npm run start -w @nexoprep/server",
     "db:generate": "npm run db:generate -w @nexoprep/database",
     "db:migrate": "npm run db:migrate -w @nexoprep/database",
-    "db:deploy": "npm run db:deploy -w @nexoprep/database"
+    "db:deploy": "npm run db:deploy -w @nexoprep/database",
+    "test": "node --test src/features/behavior/analysis.test.js"
   },
   "dependencies": {
     "@elevenlabs/client": "^1.8.1",
+    "@mediapipe/tasks-vision": "^1.1.0",
     "@prisma/client": "^5.22.0",
     "fast-check": "^4.8.0",
     "pdfjs-dist": "^5.7.284",

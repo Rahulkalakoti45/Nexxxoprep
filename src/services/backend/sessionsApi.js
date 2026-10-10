@@ -24,3 +24,17 @@ export async function appendTranscript(sessionId, payload) {
   const { transcript } = await api.post(`/api/sessions/${encodeURIComponent(sessionId)}/transcripts`, payload)
   return transcript
 }
+
+export async function getBehaviorStatus(sessionId, options) {
+  const { status } = await api.get(`/api/sessions/${encodeURIComponent(sessionId)}/behavior/status`, options)
+  return status
+}
+
+/** Stores the in-browser behavior analysis for a session (scores only, never video). */
+export function postBehaviorSummary(sessionId, summary, { final = false, keepalive = false } = {}) {
+  return api.post(
+    `/api/sessions/${encodeURIComponent(sessionId)}/behavior/summary`,
+    { final, summary },
+    { keepalive, retries: keepalive ? 0 : 1 },
+  )
+}

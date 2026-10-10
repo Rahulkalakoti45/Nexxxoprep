@@ -12,6 +12,7 @@ import ConversationDiagnosticsBanner from '../../../features/conversation/compon
 import ConversationDebugPanel from '../../../features/conversation/components/ConversationDebugPanel.jsx'
 import InterviewOrchestratorDebugPanel from '../../../features/conversation/components/InterviewOrchestratorDebugPanel.jsx'
 import BehaviorCameraCard from '../components/interview/BehaviorCameraCard.jsx'
+import { finalizeBehavior } from '../../../features/behavior/useBehaviorAnalysis.js'
 import { useConversation } from '../../../features/conversation/hooks/useConversation.js'
 
 export default function AISimulatedInterviewPage() {
@@ -102,7 +103,11 @@ export default function AISimulatedInterviewPage() {
             transportReady={conversation.transportReady}
             onEnd={async () => {
               const backendSessionId = session.backendSessionId
+              // Saves the on-device behavior summary while the conversation wraps up.
+              // Never rejects and gives up after a few seconds, so it can't block the report.
+              const savingBehavior = finalizeBehavior(backendSessionId)
               await conversation.end()
+              await savingBehavior
               actions.clear()
               navigate(backendSessionId ? `/report/${backendSessionId}` : '/dashboard')
             }}

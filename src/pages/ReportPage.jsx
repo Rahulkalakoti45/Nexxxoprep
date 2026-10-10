@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import BehaviorReportSection from '../features/behavior/BehaviorReportSection.jsx'
 import { getSession } from '../services/backend/sessionsApi.js'
 import { mapSessionToReport } from '../utils/reportMapper.js'
 
@@ -223,6 +224,8 @@ export default function ReportPage() {
           <p className="mt-2 text-xs text-slate-400">Distribution across domains in this interview.</p>
         </article>
       </section>
+
+      <BehaviorReportSection behavior={activeReport.behavior} />
 
       <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
         <h3 className="text-xl font-semibold">Improvement Roadmap</h3>
