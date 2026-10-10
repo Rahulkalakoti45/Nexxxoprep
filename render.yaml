@@ -1,15 +1,4 @@
-databases:
-  - name: nexoprep-postgres
-    databaseName: nexoprep
-    user: nexoprep
-    plan: free
-
 services:
-  - type: redis
-    name: nexoprep-redis
-    plan: free
-    ipAllowList: []
-
   - type: web
     name: nexoprep-backend
     env: node
@@ -24,15 +13,14 @@ services:
         value: 0.0.0.0
       - key: BEHAVIOR_ENGINE_ENABLED
         value: "false"
+      # External services (Supabase Postgres + Redis Cloud). Set in the Render
+      # dashboard, since they contain passwords and must never be in git.
+      # DATABASE_URL must be Supabase's *session pooler* string (port 5432):
+      # the direct db.<ref>.supabase.co host is IPv6-only and Render is IPv4.
       - key: DATABASE_URL
-        fromDatabase:
-          name: nexoprep-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: nexoprep-redis
-          property: connectionString
+        sync: false
       - key: API_KEY_DEV_ONLY
         generateValue: true
       - key: CUSTOM_LLM_SECRET
