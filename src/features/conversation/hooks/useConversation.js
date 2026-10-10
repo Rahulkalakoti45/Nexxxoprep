@@ -23,6 +23,8 @@ const FINAL_DEBOUNCE_MS = 900
 const MAX_RECONNECT_ATTEMPTS = 3
 const RECONNECT_DELAYS_MS = [2000, 5000, 10000]
 const RECONNECT_TIMEOUT_MS = 20000
+const RECONNECT_BURST_WINDOW_MS = 60000
+const RECONNECT_BURST_LIMIT = 5
 const HEARTBEAT_INTERVAL_MS = 15000
 const TOKEN_DEBOUNCE_MS = 400
 
@@ -93,6 +95,7 @@ export function useConversation({ session, user, resume, onError }) {
   const transportGenerationRef = useRef(0)
   const endedByUserRef = useRef(false)
   const reconnectAttemptRef = useRef(0)
+  const reconnectBurstRef = useRef([])
   const tokenDebounceRef = useRef(null)
   const sequenceRef = useRef(0)
   const partialTimerRef = useRef(null)
@@ -257,6 +260,12 @@ export function useConversation({ session, user, resume, onError }) {
       })
       visibilityListenersRef.current = []
       await conversationCleanupManager.cleanup(reason)
+      // The cleanup above stops the mic probe. Forget it once it is dead, otherwise the
+      // audio health check keeps reading the stopped track and reconnects forever.
+      const probe = micStreamRef.current
+      if (probe && probe.getAudioTracks().every((track) => track.readyState === 'ended')) {
+        micStreamRef.current = null
+      }
       conversationRef.current = null
       applyState({
         transportReady: false,
@@ -754,6 +763,20 @@ export function useConversation({ session, user, resume, onError }) {
         return
       }
 
+      // onConnect resets the attempt counter, so also cap how many reconnects can happen in a
+      // short window; otherwise connect-then-drop cycles would never reach the attempt limit.
+      const now = Date.now()
+      reconnectBurstRef.current = reconnectBurstRef.current.filter((t) => now - t < RECONNECT_BURST_WINDOW_MS)
+      reconnectBurstRef.current.push(now)
+      if (reconnectBurstRef.current.length > RECONNECT_BURST_LIMIT) {
+        reconnectBurstRef.current = []
+        failReconnect(
+          ERROR_CODES.RECONNECT_EXHAUSTED,
+          categorizeConversationError(new Error('Connection lost')).message,
+        )
+        return
+      }
+
       const attempt = reconnectAttemptRef.current + 1
       reconnectAttemptRef.current = attempt
       setReconnectAttempt(attempt)
@@ -911,6 +934,7 @@ export function useConversation({ session, user, resume, onError }) {
     isConnectingRef.current = true
     endedByUserRef.current = false
     reconnectAttemptRef.current = 0
+    reconnectBurstRef.current = []
     applyState({
       isConnecting: true,
       sessionActive: true,
@@ -984,6 +1008,7 @@ export function useConversation({ session, user, resume, onError }) {
     if (isConnectingRef.current) return
     logTransition('reconnect:manual', { sessionId: backendSessionId })
     reconnectAttemptRef.current = 0
+    reconnectBurstRef.current = []
     setReconnectAttempt(0)
     setErrorCode(null)
     clearReconnectTimers()
