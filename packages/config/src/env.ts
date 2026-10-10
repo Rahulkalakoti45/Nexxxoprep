@@ -15,6 +15,17 @@ console.log('[GEMINI_ENV_FORENSICS]', {
   geminiLoadedFromDotenv: dotenvReport.geminiKeyLoadedFromDotenv,
 })
 
+// z.coerce.boolean() is Boolean(value), so the string "false" would become true.
+const envBoolean = (defaultValue: boolean) =>
+  z
+    .string()
+    .optional()
+    .transform((value) =>
+      value === undefined || value.trim() === ''
+        ? defaultValue
+        : !['false', '0', 'no', 'off'].includes(value.trim().toLowerCase()),
+    )
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   SERVER_HOST: z.string().default('0.0.0.0'),
@@ -36,7 +47,7 @@ const envSchema = z.object({
   CUSTOM_LLM_SECRET: z.string().optional(),
   CONVERSATION_MEMORY_TTL_SECONDS: z.coerce.number().int().positive().default(86400),
   CONVERSATION_LOCAL_LOG_DIR: z.string().default('local_sessions'),
-  BEHAVIOR_ENGINE_ENABLED: z.coerce.boolean().default(true),
+  BEHAVIOR_ENGINE_ENABLED: envBoolean(true),
   BEHAVIOR_ENGINE_DIR: z.string().default('behavior-engine'),
   BEHAVIOR_ENGINE_ENTRYPOINT: z.string().default('main.py'),
   BEHAVIOR_ENGINE_PYTHON_BIN: z.string().optional(),
