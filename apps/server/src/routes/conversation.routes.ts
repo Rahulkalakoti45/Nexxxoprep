@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
 import { sessionIdParamSchema, ValidationError } from '@nexoprep/shared'
 import { z } from 'zod'
+import { measureConversationSeconds } from '../modules/conversation/conversation-duration.js'
 import type { ConversationPublisher } from '../modules/realtime/conversation-publisher.js'
 
 const startSchema = z.object({
@@ -332,6 +333,15 @@ export async function registerConversationRoutes(server: FastifyInstance): Promi
       status: 'completed',
       metadata: { lifecycle: 'completed', conversationMode: true },
     })
+
+    // updateState measures "completed minus created", which is wrong for a voice interview: the
+    // session is created on the setup page and may be resumed a day later. Use the conversation.
+    try {
+      const durationSeconds = await measureConversationSeconds(server.container.prisma, params.sessionId)
+      await server.container.prisma.interviewSession.update({ where: { id: params.sessionId }, data: { durationSeconds } })
+    } catch (error) {
+      request.log.warn({ error, sessionId: params.sessionId }, 'could not record the conversation duration')
+    }
 
     await publisher.publish('CONVERSATION_ENDED', {
       sessionId: params.sessionId,

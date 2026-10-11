@@ -14,6 +14,7 @@ import {
 import BehaviorReportSection from '../features/behavior/BehaviorReportSection.jsx'
 import { getSession } from '../services/backend/sessionsApi.js'
 import { mapSessionToReport } from '../utils/reportMapper.js'
+import { formatMinutes } from '../utils/formatDuration.js'
 
 const CLASSIC_DOMAINS = ['DSA', 'System Design', 'HR']
 
@@ -140,7 +141,7 @@ export default function ReportPage() {
           </article>
           <article className="rounded-xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/5">
             <p className="text-sm text-slate-400">Duration</p>
-            <p className="mt-2 text-3xl font-semibold">{Math.round(activeReport.durationSeconds / 60)} min</p>
+            <p className="mt-2 text-3xl font-semibold">{formatMinutes(activeReport.durationSeconds)}</p>
           </article>
           <article className="rounded-xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/5">
             <p className="text-sm text-slate-400">Questions</p>

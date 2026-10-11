@@ -18,6 +18,7 @@ import {
 } from 'recharts'
 import useInterview from '../hooks/useInterview.js'
 import { getUserAnalytics } from '../services/backend/analyticsApi.js'
+import { formatMinutes } from '../utils/formatDuration.js'
 
 function safeAvg(values) {
   if (!values.length) return 0
@@ -343,7 +344,7 @@ export default function DashboardPage() {
                   </div>
                   <p className="mt-1 text-xs text-slate-400">
                     {new Date(report.createdAt).toLocaleString()}
-                    {report.durationSeconds ? ` | Duration: ${Math.round(report.durationSeconds / 60)} min` : ''}
+                    {report.durationSeconds ? ` | Duration: ${formatMinutes(report.durationSeconds)}` : ''}
                     {report.backendSessionId ? ' | synced' : ''}
                   </p>
                 </div>

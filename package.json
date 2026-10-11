@@ -19,7 +19,7 @@
     "db:generate": "npm run db:generate -w @nexoprep/database",
     "db:migrate": "npm run db:migrate -w @nexoprep/database",
     "db:deploy": "npm run db:deploy -w @nexoprep/database",
-    "test": "node --test src/features/behavior/analysis.test.js src/utils/reportMapper.test.js",
+    "test": "node --test src/features/behavior/analysis.test.js src/utils/reportMapper.test.js src/utils/formatDuration.test.js",
     "test:server": "npm run test -w @nexoprep/server"
   },
   "dependencies": {
