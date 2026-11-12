@@ -107,6 +107,47 @@ export function deriveAnswerPatterns(answered) {
   }
 }
 
+function offsetSeconds(at, start) {
+  const t = Date.parse(at || '')
+  const s = Date.parse(start || '')
+  if (!Number.isFinite(t) || !Number.isFinite(s)) return null
+  return Math.max(0, Math.round((t - s) / 1000))
+}
+
+/**
+ * One review per answered question: the question, what the candidate said, when it was asked
+ * (seconds from the start of the interview) and, when the grounded summary wrote it, coaching
+ * with a quote from the answer and a better answer. Without coaching the review still shows the
+ * exchange itself, so older reports get something useful too.
+ */
+export function buildQuestionReviews(evidence, interviewSummary) {
+  const answered = answeredPairs(evidence)
+  if (!answered.length) return []
+  const start = evidence?.transcriptStatistics?.firstEntryAt || evidence?.interviewMetadata?.startedAt || answered[0]?.askedAt
+  const feedback = new Map(
+    (Array.isArray(interviewSummary?.questionFeedback) ? interviewSummary.questionFeedback : [])
+      .filter((row) => row && typeof row.sequence === 'number')
+      .map((row) => [row.sequence, row]),
+  )
+  return answered.map((pair) => {
+    const coaching = feedback.get(pair.sequence) || null
+    return {
+      sequence: pair.sequence,
+      question: pair.question,
+      answer: pair.answer.trim(),
+      askedAtSeconds: offsetSeconds(pair.askedAt, start),
+      wordCount: wordCount(pair.answer),
+      fillerCount: countMatches(pair.answer, FILLER_PATTERN),
+      topic: coaching?.topic || null,
+      verdict: coaching?.verdict || null,
+      quote: coaching?.quote || null,
+      whatWorked: coaching?.whatWorked || '',
+      whatWasMissing: coaching?.whatWasMissing || '',
+      betterAnswer: coaching?.betterAnswer || '',
+    }
+  })
+}
+
 export function mapBackendReportToUi(report) {
   const feedback = parseAiFeedback(report?.aiFeedback)
   const stored = feedback?.uiReport
@@ -174,6 +215,7 @@ export function mapBackendReportToUi(report) {
     durationSeconds: session.durationSeconds || 0,
     domainBreakdown,
     answers: [],
+    questionReviews: buildQuestionReviews(evidence, interviewSummary),
     questionCount: answered.length,
     weaknessSummary: interviewSummary?.weaknesses || [],
     strengthsSummary: interviewSummary?.strengths || [],

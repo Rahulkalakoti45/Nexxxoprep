@@ -5,6 +5,7 @@ import type { AnalyticsService } from '@nexoprep/analytics-service'
 import type { MemoryService } from '@nexoprep/memory-service'
 import type { ReportService } from '@nexoprep/report-service'
 import type { SessionService } from '@nexoprep/session-service'
+import type { UnifiedReportService } from '@nexoprep/unified-report-service'
 import type { ConversationMemoryService } from './modules/conversation/memory.service.js'
 import type { ElevenLabsService } from './modules/conversation/elevenlabs.service.js'
 import type { EvidenceExtractionService } from './modules/evidence/evidence-extraction.service.js'
@@ -16,6 +17,9 @@ import type { ConversationPublisher } from './modules/realtime/conversation-publ
 import type { BehaviorEngineService } from './modules/behavior/behavior-engine.service.js'
 import type { BehaviorReportIngestionService } from './modules/behavior/behavior-report-ingestion.service.js'
 import type { ResumeService } from './services/resume.service.js'
+import type { PracticeHistoryService } from './modules/progress/practice-history.service.js'
+import type { CodingInterviewerService } from './modules/coding/coding-interviewer.service.js'
+import type { CodingAttemptService } from './modules/coding/coding-attempt.service.js'
 
 export interface AppContainer {
   prisma: DatabaseClient
@@ -26,12 +30,16 @@ export interface AppContainer {
   sessionService: SessionService
   reportService: ReportService
   analyticsService: AnalyticsService
+  unifiedReportService: UnifiedReportService
   conversationMemory: ConversationMemoryService
   elevenLabs: ElevenLabsService
   gemini: GeminiService
   orchestrator: OrchestratorService
   interviewEngine: InterviewEngineService
   evidenceExtractionService: EvidenceExtractionService
+  practiceHistory: PracticeHistoryService
+  codingInterviewer: CodingInterviewerService
+  codingAttempts: CodingAttemptService
   candidateProfileService: CandidateProfileService
   resumeService: ResumeService
   conversationPublisher: ConversationPublisher

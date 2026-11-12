@@ -136,3 +136,29 @@ test('the behavior section data is still attached', () => {
   )
   assert.equal(report.behavior.overall, 8)
 })
+
+test('buildQuestionReviews pairs each answer with its coaching and its time in the interview', async () => {
+  const { buildQuestionReviews } = await import('./reportMapper.js')
+  const ev = {
+    transcriptStatistics: { firstEntryAt: '2026-11-01T10:00:00.000Z' },
+    questionsAnswered: [
+      { sequence: 1, question: 'Tell me about MedXNet.', askedAt: '2026-11-01T10:01:05.000Z', answer: 'Um, I built it with React.', answeredAt: null },
+      { sequence: 3, question: 'Skipped?', askedAt: '2026-11-01T10:03:00.000Z', answer: '  ', answeredAt: null },
+      { sequence: 5, question: 'Why Redis?', askedAt: null, answer: 'For caching sessions.', answeredAt: null },
+    ],
+  }
+  const summary = {
+    questionFeedback: [
+      { sequence: 1, topic: 'Projects', verdict: 'weak', quote: 'I built it with React', whatWorked: '', whatWasMissing: 'No architecture.', betterAnswer: 'MedXNet is…' },
+    ],
+  }
+
+  const reviews = buildQuestionReviews(ev, summary)
+  assert.equal(reviews.length, 2, 'unanswered questions are left out')
+  assert.equal(reviews[0].askedAtSeconds, 65)
+  assert.equal(reviews[0].verdict, 'weak')
+  assert.equal(reviews[0].fillerCount, 1)
+  assert.equal(reviews[1].askedAtSeconds, null)
+  assert.equal(reviews[1].verdict, null, 'a question without coaching still shows the exchange')
+  assert.deepEqual(buildQuestionReviews(null, summary), [])
+})

@@ -243,12 +243,12 @@ export default function InterviewSimulatorPage() {
 
   if (!currentQuestion) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
+      <section className="rounded-2xl border border-line bg-surface p-6">
         <h2 className="text-xl font-semibold">Preparing Interview Session...</h2>
         <button
           type="button"
           onClick={restart}
-          className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-slate-900"
+          className="mt-4 rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400"
         >
           Rebuild Session
         </button>
@@ -257,7 +257,7 @@ export default function InterviewSimulatorPage() {
   }
 
   const left = (
-    <section className="rounded-2xl border border-white/10 bg-[#111620] p-6 shadow-lg shadow-black/25">
+    <section className="rounded-2xl border border-line bg-surface p-6 shadow-lg shadow-black/25">
       {!isOpenAIConfigured() ? (
         <div className="mb-4 rounded-xl border border-yellow-300/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-100">
           AI fallback mode active (missing VITE_OPENAI_API_KEY).
@@ -265,16 +265,16 @@ export default function InterviewSimulatorPage() {
       ) : null}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-ink-muted">
           Round: {currentQuestion.roundName} - Question {session.currentQuestionIndex + 1} / {session.questions.length}
         </p>
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-ink-soft">
           Session: {formatDuration(durationSeconds)} | Round: {formatDuration(roundElapsed)} | Question:{' '}
           {formatDuration(questionElapsed)}
         </p>
       </div>
       <div className="mt-3 h-2 w-full rounded-full bg-white/10">
-        <div className="h-2 rounded-full bg-slate-100 transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-300 transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       <QuestionCard
@@ -290,7 +290,7 @@ export default function InterviewSimulatorPage() {
         value={currentAnswer}
         onChange={(event) => setCurrentAnswer(event.target.value)}
         rows={9}
-        className="mt-4 w-full rounded-xl border border-white/15 bg-[#0a0f17] p-3 text-slate-100 outline-none transition focus:border-slate-200"
+        className="mt-4 w-full rounded-xl border border-line-strong bg-inset p-3 text-ink outline-none transition focus:border-brand-400"
         placeholder="Write your answer here..."
       />
       {speechError ? <p className="mt-2 text-xs text-red-300">{speechError}</p> : null}
@@ -300,7 +300,7 @@ export default function InterviewSimulatorPage() {
           type="button"
           onClick={() => onSubmit('answered')}
           disabled={isSubmitting || !currentAnswer.trim()}
-          className="rounded-lg bg-slate-100 px-4 py-2 font-medium text-slate-900 transition hover:shadow-md hover:shadow-slate-100/10 disabled:opacity-60"
+          className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 transition hover:shadow-md hover:shadow-slate-100/10 disabled:opacity-60"
         >
           {isSubmitting ? 'Evaluating...' : 'Next Question'}
         </button>
@@ -338,7 +338,7 @@ export default function InterviewSimulatorPage() {
   )
 
   const debug = import.meta.env.DEV ? (
-    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-lg border border-white/20 bg-black/80 p-3 text-xs text-slate-200 backdrop-blur">
+    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-lg border border-line-strong bg-black/80 p-3 text-xs text-ink backdrop-blur">
       <p className="font-semibold">Interview Debug</p>
       <p>Loaded: true</p>
       <p>Questions: {session.questions.length}</p>

@@ -16,7 +16,7 @@ const SAFE_TEST_CONFIG = {
 function DebugPanel({ state }) {
   if (import.meta.env.PROD) return null
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl border border-slate-700 bg-slate-900 p-3 text-xs text-slate-100 shadow-xl">
+    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl border border-slate-700 bg-slate-900 p-3 text-xs text-ink shadow-xl">
       <p>session loaded: {String(Boolean(state.sessionId))}</p>
       <p>questions count: {state.questions.length}</p>
       <p>current round: {state.currentRoundIndex + 1}</p>

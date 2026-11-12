@@ -1,39 +1,36 @@
-export default function RoundTracker({ rounds = [], currentRoundIndex = 0, answers = {}, onSelectRound }) {
+import { cx } from '../../../../components/ui/helpers.js'
+
+/** The interview's rounds as a vertical stepper: done, current, and still to come. */
+export default function RoundTracker({ rounds = [], currentRoundIndex = 0, answers = {} }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#111620] p-4">
-      <p className="text-sm font-semibold text-slate-100">Round Tracker</p>
-      <div className="mt-3 space-y-2">
-        {rounds.map((round, idx) => {
-          const total = round.questionIds?.length || 0
-          const answered = (round.questionIds || []).filter((id) => Boolean(answers[id])).length
-          const isActive = idx === currentRoundIndex
-          const isComplete = total > 0 && answered >= total
-          const pct = total ? Math.round((answered / total) * 100) : 0
-          return (
-            <button
-            key={round.id}
-            type="button"
-            onClick={() => onSelectRound?.(idx)}
-            disabled={!isActive && idx > currentRoundIndex}
-            className={`w-full rounded-xl border px-3 py-2 text-left text-xs transition ${
-              isActive
-                ? 'border-slate-200 bg-slate-100 text-slate-900'
-                : 'border-white/10 bg-black/20 text-slate-200 hover:bg-white/5'
-            } ${!isActive && idx > currentRoundIndex ? 'cursor-not-allowed opacity-60 hover:bg-black/20' : ''}`}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span>
-                {idx + 1}. {round.label}
-              </span>
-              <span className="text-[11px] opacity-80">
-                {isComplete ? '✓' : ''} {answered}/{total} • {pct}%
-              </span>
+    <ol className="space-y-1">
+      {rounds.map((round, idx) => {
+        const total = round.questionIds?.length || 0
+        const answered = (round.questionIds || []).filter((id) => Boolean(answers[id])).length
+        const isActive = idx === currentRoundIndex
+        const isDone = idx < currentRoundIndex || (total > 0 && answered >= total)
+        return (
+          <li key={round.id} className="relative flex gap-3 pb-3 last:pb-0">
+            {idx < rounds.length - 1 ? (
+              <span className={cx('absolute left-[13px] top-7 h-[calc(100%-1.5rem)] w-px', isDone ? 'bg-brand-400/50' : 'bg-line-strong')} aria-hidden="true" />
+            ) : null}
+            <span
+              className={cx(
+                'relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-full border text-xs font-semibold',
+                isDone ? 'border-brand-400 bg-brand-500 text-white' : isActive ? 'border-brand-400 bg-brand-500/15 text-brand-200 shadow-glow' : 'border-line-strong text-ink-faint',
+              )}
+            >
+              {isDone ? '✓' : idx + 1}
+            </span>
+            <div className="min-w-0 pt-0.5">
+              <p className={cx('text-sm font-medium', isActive ? 'text-ink' : isDone ? 'text-ink-soft' : 'text-ink-muted')}>{round.label}</p>
+              <p className="text-xs text-ink-faint">
+                {answered}/{total} answered
+              </p>
             </div>
-          </button>
-          )
-        })}
-      </div>
-    </div>
+          </li>
+        )
+      })}
+    </ol>
   )
 }
-

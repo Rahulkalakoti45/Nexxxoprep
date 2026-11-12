@@ -1,10 +1,13 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useInterview from '../hooks/useInterview.js'
 import { analyzeResume } from '../utils/resumeAnalyzer.js'
 import { analyzeResumeWithAI, optimizeResumeWithAI } from '../services/openaiService.js'
 import { analyzeResume as analyzeResumeApi } from '../services/backend/resumeApi.js'
 import * as pdfjsLib from 'pdfjs-dist'
+import { Badge, Button, ButtonLink, Card, CardHeader, EmptyState, PageHeader, ScoreRing, Spinner } from '../components/ui/index.jsx'
+import { cx } from '../components/ui/helpers.js'
+import { IconArrowRight, IconCheck, IconFile, IconSparkle, IconUpload } from '../components/ui/icons.jsx'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
@@ -114,126 +117,195 @@ export default function ResumeUploadPage() {
     }
   }
 
+  const [dragging, setDragging] = useState(false)
+  const [showText, setShowText] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const onDrop = (event) => {
+    event.preventDefault()
+    setDragging(false)
+    const file = event.dataTransfer.files?.[0]
+    if (file) handleFileChange({ target: { files: [file] } })
+  }
+
+  const copyOptimized = async () => {
+    try {
+      await navigator.clipboard.writeText(optimizedText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  const companySuggestions = resumeInsights?.companySuggestions || []
+  const roleImprovements = resumeInsights?.roleImprovements || resumeInsights?.improvementSuggestions || []
+  const missingSkills = resumeInsights?.missingSkills || []
+  const hasText = Boolean(resumeText.trim())
+
   return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-        <h2 className="text-2xl font-semibold">Resume Upload</h2>
-        <p className="mt-2 text-slate-400">Upload your PDF and run AI-powered resume analysis and optimization.</p>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Resume"
+        title="Make the interview about you"
+        subtitle="Add your resume and the interviewer will ask about your real projects and skills, just like a real panel."
+        action={
+          resume ? (
+            <ButtonLink to="/setup" size="md">
+              Start an interview <IconArrowRight className="h-4 w-4" />
+            </ButtonLink>
+          ) : null
+        }
+      />
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <div className="rounded-xl border border-dashed border-white/20 bg-black/20 p-5">
-            <p className="text-sm text-slate-300">Upload PDF</p>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              className="mt-3 block w-full rounded-lg border border-white/10 bg-[#0a0e15] px-3 py-2 text-sm"
-            />
-            <p className="mt-2 text-xs text-slate-400">Selected: {selectedFileName || 'No file selected'}</p>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="1. Upload your resume" subtitle="PDF works best. We read the text in your browser." />
 
-            <div className="mt-5">
-              <p className="text-sm text-slate-300">Paste resume text (required for AI analysis)</p>
-              <textarea
-                value={resumeText}
-                onChange={(event) => setResumeText(event.target.value)}
-                rows={8}
-                className="mt-2 w-full rounded-xl border border-white/15 bg-[#0a0f17] p-3 text-sm text-slate-100 outline-none transition focus:border-slate-200"
-                placeholder="Paste your resume content here..."
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={handleExtract}
-              disabled={loadingAI || !resumeText.trim()}
-              className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 transition hover:opacity-90 disabled:opacity-60"
-            >
-              {loadingAI ? 'Analyzing...' : 'Analyze Resume'}
-            </button>
-            {aiError ? <p className="mt-2 text-sm text-red-300">{aiError}</p> : null}
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <p className="text-sm text-slate-300">AI Resume Insights</p>
-            {resumeInsights ? (
-              <div className="mt-3 space-y-3 text-sm text-slate-300">
-                <div className="rounded-xl border border-white/10 bg-[#0a0f17] p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">Resume Score / ATS</p>
-                  <p className="mt-1 text-2xl font-semibold text-slate-100">
-                    {resumeInsights.resumeScore ?? '--'}% / {resumeInsights.atsScore ?? '--'}%
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-100">Missing Skills</p>
-                  <p>{resumeInsights.missingSkills?.join(', ') || '--'}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-100">Company Suggestions ({company})</p>
-                  <ul className="list-disc space-y-1 pl-5">
-                    {(resumeInsights.companySuggestions || []).map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <p className="font-medium text-slate-100">Role Improvements ({role})</p>
-                  <ul className="list-disc space-y-1 pl-5">
-                    {(resumeInsights.roleImprovements || resumeInsights.improvementSuggestions || []).map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <p className="mt-3 text-slate-400">No structured resume data yet.</p>
+          <label
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragging(true)
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            className={cx(
+              'mt-5 flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed px-6 py-10 text-center transition',
+              dragging ? 'border-brand-400 bg-brand-500/10' : 'border-line-strong bg-inset/60 hover:border-brand-400/60 hover:bg-brand-500/[0.04]',
             )}
-          </div>
-        </div>
+          >
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-500/15 text-brand-300">
+              <IconUpload className="h-6 w-6" />
+            </span>
+            <span className="mt-4 font-semibold text-ink">{selectedFileName || 'Drop your PDF here, or click to browse'}</span>
+            <span className="mt-1 text-sm text-ink-muted">
+              {selectedFileName ? (hasText ? 'Text extracted. Ready to analyse.' : 'Reading…') : 'One page or two, any template.'}
+            </span>
+            <input type="file" accept="application/pdf" onChange={handleFileChange} className="sr-only" />
+          </label>
 
-        <div className="mt-5 grid grid-cols-2 gap-4">
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Optimize Resume (AI)</h3>
-              <button
-                type="button"
-                onClick={handleOptimize}
-                disabled={loadingAI || !resumeText.trim()}
-                className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-60"
-              >
-                {loadingAI ? 'Optimizing...' : 'Optimize'}
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-slate-400">Target: {company} • {role}</p>
+          <button
+            type="button"
+            onClick={() => setShowText((v) => !v)}
+            aria-expanded={showText || !selectedFileName}
+            className="mt-4 text-sm font-medium text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+          >
+            {hasText ? (showText ? 'Hide the text we read' : 'Check the text we read') : 'No PDF? Paste your resume text instead'}
+          </button>
+          {showText || (!hasText && !selectedFileName) ? (
             <textarea
               value={resumeText}
-              readOnly
+              onChange={(event) => setResumeText(event.target.value)}
               rows={8}
-              className="mt-3 w-full rounded-xl border border-white/10 bg-[#0a0f17] p-3 text-sm text-slate-200"
-              placeholder="Original resume text"
+              className="mt-3 w-full rounded-xl border border-line-strong bg-inset p-3.5 text-sm leading-relaxed text-ink outline-none transition placeholder:text-ink-faint focus:border-brand-400 focus:ring-4 focus:ring-brand-500/15"
+              placeholder="Paste your resume content here…"
             />
-          </div>
+          ) : null}
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <h3 className="text-lg font-semibold">After Optimization</h3>
-            <textarea
-              value={optimizedText}
-              readOnly
-              rows={8}
-              className="mt-3 w-full rounded-xl border border-white/10 bg-[#0a0f17] p-3 text-sm text-slate-200"
-              placeholder="AI optimized resume will appear here..."
-            />
-          </div>
-        </div>
+          {aiError ? (
+            <p role="alert" className="mt-4 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3.5 py-2.5 text-sm text-rose-100">
+              {aiError}
+            </p>
+          ) : null}
+
+          <Button size="lg" className="mt-5 w-full" onClick={handleExtract} disabled={loadingAI || !hasText}>
+            {loadingAI ? (
+              <>
+                <Spinner /> Analysing your resume…
+              </>
+            ) : (
+              <>
+                <IconSparkle className="h-4 w-4" /> Analyse resume
+              </>
+            )}
+          </Button>
+        </Card>
+
+        <Card>
+          <CardHeader title="2. What we found" subtitle={`Scored for ${role} roles at ${company}.`} />
+          {resumeInsights ? (
+            <div className="mt-5 space-y-6">
+              <div className="flex flex-wrap justify-around gap-6 rounded-2xl border border-line bg-inset/60 p-5">
+                <div className="text-center">
+                  <ScoreRing score={resumeInsights.resumeScore ?? null} size={104} stroke={8} />
+                  <p className="mt-2 text-sm font-medium text-ink-soft">Resume score</p>
+                </div>
+                <div className="text-center">
+                  <ScoreRing score={resumeInsights.atsScore ?? null} size={104} stroke={8} />
+                  <p className="mt-2 text-sm font-medium text-ink-soft">ATS readability</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-ink">Skills worth adding</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {missingSkills.length ? missingSkills.map((skill) => <Badge key={skill}>{skill}</Badge>) : <p className="text-sm text-ink-muted">Nothing obvious missing.</p>}
+                </div>
+              </div>
+
+              {[
+                [`For ${company}`, companySuggestions],
+                [`For ${role} roles`, roleImprovements],
+              ].map(([title, items]) =>
+                items.length ? (
+                  <div key={title}>
+                    <p className="text-sm font-semibold text-ink">{title}</p>
+                    <ul className="mt-2 space-y-2">
+                      {items.map((item) => (
+                        <li key={item} className="flex gap-2.5 text-sm text-ink-soft">
+                          <IconCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-300" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null,
+              )}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <EmptyState icon={<IconFile />} title="Nothing analysed yet" body="Upload or paste your resume, then hit Analyse. Scores and suggestions show up here." />
+            </div>
+          )}
+        </Card>
       </div>
 
-      <button
-        type="button"
-        onClick={() => navigate('/setup')}
-        className="rounded-lg border border-white/20 px-4 py-2 transition hover:bg-white/10"
-      >
-        Continue to Interview Setup
-      </button>
-    </section>
+      <Card>
+        <CardHeader
+          title="Rewrite it for this role"
+          subtitle={`An AI rewrite tuned for ${role} at ${company}. Review every line before you use it.`}
+          action={
+            <Button variant="secondary" size="sm" onClick={handleOptimize} disabled={loadingAI || !hasText}>
+              {loadingAI ? <Spinner /> : <IconSparkle className="h-4 w-4" />} Rewrite
+            </Button>
+          }
+        />
+        {optimizedText ? (
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-faint">Before</p>
+              <textarea value={resumeText} readOnly rows={12} className="w-full rounded-xl border border-line bg-inset p-3.5 text-sm leading-relaxed text-ink-muted" />
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-300">After</p>
+                <button type="button" onClick={copyOptimized} className="text-xs font-semibold text-brand-300 hover:text-brand-200">
+                  {copied ? 'Copied ✓' : 'Copy'}
+                </button>
+              </div>
+              <textarea value={optimizedText} readOnly rows={12} className="w-full rounded-xl border border-brand-400/30 bg-brand-500/[0.05] p-3.5 text-sm leading-relaxed text-ink" />
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-ink-muted">{hasText ? 'Hit Rewrite to see a version tuned for this role, side by side with yours.' : 'Add your resume first.'}</p>
+        )}
+      </Card>
+
+      <div className="flex justify-end">
+        <Button size="lg" onClick={() => navigate('/setup')}>
+          Continue to interview setup <IconArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   )
 }
-

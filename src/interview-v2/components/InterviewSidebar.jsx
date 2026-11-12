@@ -4,7 +4,7 @@ import RoundTracker from './RoundTracker'
 function Badge({ label, value }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-2">
-      <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
       <p className="text-sm font-medium text-slate-900">{value}</p>
     </div>
   )

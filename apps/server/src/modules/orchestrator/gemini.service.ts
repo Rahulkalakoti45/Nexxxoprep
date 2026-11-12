@@ -61,6 +61,14 @@ export class GeminiService {
     const sources = collectGeminiEnvSources(this.config)
     console.log('[GEMINI_BOOT]', { envSources: sources })
 
+    // No key at all is a supported setup: every Gemini feature checks isConfigured() and falls
+    // back (evidence-only reports, the built-in coding interviewer). A key that is present but
+    // malformed is still a hard error below, because that is always a mistake.
+    if (!this.config.GEMINI_API_KEY?.length) {
+      console.warn('[GEMINI_BOOT] GEMINI_API_KEY is not set: AI interviewer replies and AI feedback are disabled until it is added to .env.')
+      return
+    }
+
     try {
       validateGeminiApiKey(this.config.GEMINI_API_KEY)
     } catch (error) {

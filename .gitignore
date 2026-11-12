@@ -40,3 +40,14 @@ build/
 
 # Generated behavior-engine session output (run artifacts, not source)
 behavior-engine/reports/*
+
+# Example env file is safe to share (no values).
+!.env.example
+
+# Candidate files processed by the SAAS automation at runtime (may contain real personal data).
+SAAS Model/sample_data/*/*
+!SAAS Model/sample_data/*/.gitkeep
+
+# Local folder-listing dumps, not project files.
+/tree.txt
+/structure.txt

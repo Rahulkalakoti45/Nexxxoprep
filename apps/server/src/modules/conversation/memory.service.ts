@@ -8,6 +8,7 @@ import type {
   InterviewPlanProgress,
   InterviewStage,
   InterviewSummary,
+  PracticeFocusArea,
 } from '@nexoprep/types'
 import { createEmptyPlanProgress, generateInterviewPlan } from '../orchestrator/interview-plan.service.js'
 
@@ -45,6 +46,9 @@ export interface ConversationMemory {
   candidateName?: string
   resumeSummary?: string
   firstQuestionPending?: boolean
+  /** Weak areas from the candidate's earlier sessions that this interview should revisit. */
+  practiceFocus: PracticeFocusArea[]
+  previousSessionCount: number
 }
 
 export class ConversationMemoryService {
@@ -103,6 +107,8 @@ export class ConversationMemoryService {
       candidateName: partial.candidateName || 'Candidate',
       resumeSummary: partial.resumeSummary || '',
       firstQuestionPending: partial.firstQuestionPending ?? false,
+      practiceFocus: partial.practiceFocus ?? [],
+      previousSessionCount: partial.previousSessionCount ?? 0,
     }
   }
 
@@ -151,6 +157,8 @@ export class ConversationMemoryService {
       candidateName: 'Candidate',
       resumeSummary: '',
       firstQuestionPending: true,
+      practiceFocus: [],
+      previousSessionCount: 0,
       updatedAt: new Date().toISOString(),
     }
     await this.save(memory)

@@ -1,21 +1,18 @@
-export default function ErrorState({ title = 'Something went wrong', message = 'Please retry.' , onRetry }) {
+import { Button } from '../../../../components/ui/index.jsx'
+
+export default function ErrorState({ title = 'Something went wrong', message = 'Please retry.', onRetry }) {
   return (
-    <section className="rounded-2xl border border-red-200/20 bg-[#111620] p-6 shadow-lg shadow-black/25">
-      <div className="inline-flex items-center gap-2 rounded-full border border-red-200/20 bg-red-500/10 px-3 py-1 text-xs text-red-200">
-        Error
-      </div>
-      <h2 className="mt-4 text-xl font-semibold text-slate-100">{title}</h2>
-      <p className="mt-2 text-sm text-slate-300">{message}</p>
+    <section className="mx-auto flex max-w-md flex-col items-center rounded-3xl border border-rose-400/20 bg-surface p-10 text-center shadow-card">
+      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-400/15 text-xl text-rose-300" aria-hidden="true">
+        !
+      </span>
+      <h2 className="mt-5 text-xl font-semibold text-ink">{title}</h2>
+      <p className="mt-2 text-sm text-ink-muted">{message}</p>
       {onRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 transition hover:opacity-90"
-        >
-          Retry
-        </button>
+        <Button className="mt-6" onClick={onRetry}>
+          Try again
+        </Button>
       ) : null}
     </section>
   )
 }
-

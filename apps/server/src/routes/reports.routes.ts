@@ -15,6 +15,14 @@ export async function registerReportRoutes(server: FastifyInstance): Promise<voi
     return reply.status(201).send({ report })
   })
 
+  // The candidate's progress across sessions: scores over time, weak spots and how each is
+  // trending, and the areas their next interview will revisit.
+  server.get('/users/:userId/progress', async (request) => {
+    const params = userIdParamSchema.parse(request.params)
+    const progress = await server.container.practiceHistory.loadProgress(params.userId)
+    return { progress }
+  })
+
   server.get('/users/:userId', async (request) => {
     const params = userIdParamSchema.parse(request.params)
     const query = paginationQuerySchema.parse(request.query)

@@ -10,7 +10,7 @@ export default function QuestionCard({ question, displayedText }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="mb-2 flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full bg-slate-100 px-2 py-1">{question.round}</span>
+        <span className="rounded-full bg-brand-500/15 px-2 py-1 text-brand-200">{question.round}</span>
         <span className="rounded-full bg-blue-100 px-2 py-1 text-blue-700">{question.domain}</span>
         <span className="rounded-full bg-purple-100 px-2 py-1 text-purple-700">{question.difficulty}</span>
       </div>
