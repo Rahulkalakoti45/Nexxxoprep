@@ -1,5 +1,5 @@
 import type { ConversationMemory } from '../../conversation/memory.service.js'
-import type { FollowUpDirective, InterviewStage } from '@nexoprep/types'
+import type { FollowUpDirective, InterviewStage, PracticeFocusArea } from '@nexoprep/types'
 import { getStageObjective } from '../interview-stages.js'
 import { formatPlanProgress } from '../interview-plan.service.js'
 import type { CandidateProfileService } from '../candidate-profile.service.js'
@@ -37,6 +37,7 @@ export interface PromptContextSnapshot {
   planProgress: string
   hasResumeData: boolean
   firstQuestionPending: boolean
+  practiceFocus: string[]
 }
 
 export function buildPromptContextSnapshot(memory: ConversationMemory): PromptContextSnapshot {
@@ -62,7 +63,48 @@ export function buildPromptContextSnapshot(memory: ConversationMemory): PromptCo
         (profile.skills.length > 0 || profile.projects.length > 0 || profile.experience.length > 0),
     ),
     firstQuestionPending: memory.firstQuestionPending ?? false,
+    practiceFocus: (memory.practiceFocus ?? []).map((f) => f.topic),
   }
+}
+
+const DEEP_DIVE_STAGES: InterviewStage[] = ['RESUME_DISCUSSION', 'TECHNICAL_ROUND', 'DEEP_TECHNICAL']
+
+/**
+ * Real interviews are won or lost on follow-ups about the candidate's own work. While the
+ * candidate is talking about something they built, the interviewer climbs a ladder of harder
+ * questions about it until the candidate reaches the edge of what they know.
+ */
+export function buildProjectDeepDiveBlock(stage: InterviewStage, hasResumeData: boolean): string {
+  if (!DEEP_DIVE_STAGES.includes(stage)) return ''
+  return [
+    'PROJECT DEEP-DIVE (when the candidate describes something they built or worked on):',
+    '- Do not accept a surface description. Follow up on THEIR project, in roughly this order, one question per turn:',
+    '  1. Their role: "Which part did you personally build?"',
+    '  2. Decisions: "Why <the technology they named> instead of <a realistic alternative>?"',
+    '  3. Failure: "What happens when <a component they named> goes down or gets slow?"',
+    '  4. Scale: "What would break first at 10x the users or data?"',
+    '  5. Hindsight: "What would you change if you rebuilt it today?"',
+    "- Use the exact names, tools and components the candidate just said. Never introduce facts about their project they did not state.",
+    '- If an answer is vague, ask for one concrete example before moving up the ladder.',
+    `- When the candidate clearly reaches the limit of what they know ("I'm not sure", guessing, repeating themselves), acknowledge it neutrally and move to a new topic. Do not lecture or give the answer.`,
+    '- Go at most 3 follow-ups deep on one project before moving on.',
+    hasResumeData ? '- Prefer projects listed in the RESUME DATA above.' : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+const FOCUS_STAGES: InterviewStage[] = ['TECHNICAL_ROUND', 'DEEP_TECHNICAL', 'BEHAVIORAL_ROUND']
+
+/** Weak areas from earlier practice sessions, to be revisited naturally in this one. */
+export function buildPracticeFocusBlock(focus: PracticeFocusArea[], stage: InterviewStage): string {
+  if (!focus.length || !FOCUS_STAGES.includes(stage)) return ''
+  return [
+    "PRACTICE FOCUS (from this candidate's previous practice interviews):",
+    `The candidate struggled with: ${focus.map((f) => f.topic).join(', ')}.`,
+    '- Ask at least one question on one of these topics during this interview, framed for the current role and company.',
+    "- Ask it like any other question. Never mention previous sessions, scores or that this is a known weak area.",
+  ].join('\n')
 }
 
 export function buildInterviewerSystemPrompt(
@@ -131,10 +173,12 @@ export function buildInterviewerSystemPrompt(
     '- Ask exactly ONE clear interview question at a time.',
     '- Keep spoken responses concise (2-4 sentences) suitable for voice.',
     '- Tailor every question to the Company, Role, Difficulty, and Resume above.',
-    '- Questions must reference Amazon/company context, role skills, or resume items — not generic HR scripts.',
+    `- Questions must reference ${ctx.company !== '—' ? ctx.company : 'the target company'}'s context, role skills, or resume items — not generic HR scripts.`,
     '',
     firstQuestionRule,
     bannedBlock,
+    buildProjectDeepDiveBlock(memory.interviewStage, ctx.hasResumeData),
+    buildPracticeFocusBlock(memory.practiceFocus ?? [], memory.interviewStage),
     '',
     ctx.strongTopics.length ? `Strong topics (go deeper): ${ctx.strongTopics.join(', ')}` : '',
     ctx.weakTopics.length ? `Weak topics (clarify): ${ctx.weakTopics.join(', ')}` : '',

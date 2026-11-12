@@ -6,6 +6,7 @@ import { createRedisClient, RedisEventBus } from '@nexoprep/events'
 import { MemoryService } from '@nexoprep/memory-service'
 import { ReportService } from '@nexoprep/report-service'
 import { SessionService } from '@nexoprep/session-service'
+import { UnifiedReportService } from '@nexoprep/unified-report-service'
 import { ConversationMemoryService } from './modules/conversation/memory.service.js'
 import { ElevenLabsService } from './modules/conversation/elevenlabs.service.js'
 import { EvidenceExtractionService } from './modules/evidence/evidence-extraction.service.js'
@@ -19,6 +20,9 @@ import { QuestionDiversityService } from './modules/orchestrator/question-divers
 import { ConversationPublisher } from './modules/realtime/conversation-publisher.js'
 import { BehaviorEngineService } from './modules/behavior/behavior-engine.service.js'
 import { BehaviorEngineOrchestrator } from './modules/behavior/behavior-engine.orchestrator.js'
+import { PracticeHistoryService } from './modules/progress/practice-history.service.js'
+import { CodingInterviewerService } from './modules/coding/coding-interviewer.service.js'
+import { CodingAttemptService } from './modules/coding/coding-attempt.service.js'
 import { BehaviorReportIngestionService } from './modules/behavior/behavior-report-ingestion.service.js'
 import { ResumeService } from './services/resume.service.js'
 import type { AppContainer } from './types.js'
@@ -42,6 +46,7 @@ export async function buildContainer(config: AppConfig, logger: FastifyBaseLogge
   const sessionService = new SessionService(prisma, memoryService, eventBus)
   const reportService = new ReportService(prisma, eventBus)
   const analyticsService = new AnalyticsService(prisma)
+  const unifiedReportService = new UnifiedReportService(prisma)
   const conversationMemory = new ConversationMemoryService(redis, config.CONVERSATION_MEMORY_TTL_SECONDS)
   const elevenLabs = new ElevenLabsService(config)
   if (elevenLabs.isConfigured()) {
@@ -63,6 +68,7 @@ export async function buildContainer(config: AppConfig, logger: FastifyBaseLogge
   const answerScoringService = new AnswerScoringService()
   const interviewSummaryService = new InterviewSummaryService(gemini)
   const evidenceExtractionService = new EvidenceExtractionService(prisma)
+  const practiceHistory = new PracticeHistoryService(prisma)
   const interviewEngine = new InterviewEngineService(
     conversationMemory,
     candidateProfileService,
@@ -72,7 +78,10 @@ export async function buildContainer(config: AppConfig, logger: FastifyBaseLogge
     reportService,
     prisma,
     evidenceExtractionService,
+    practiceHistory,
   )
+  const codingInterviewer = new CodingInterviewerService(gemini)
+  const codingAttempts = new CodingAttemptService(prisma)
   const orchestrator = new OrchestratorService(gemini, candidateProfileService, questionDiversityService)
   const conversationPublisher = new ConversationPublisher(eventBus)
   const resumeService = new ResumeService(prisma)
@@ -93,12 +102,16 @@ export async function buildContainer(config: AppConfig, logger: FastifyBaseLogge
     sessionService,
     reportService,
     analyticsService,
+    unifiedReportService,
     conversationMemory,
     elevenLabs,
     gemini,
     orchestrator,
     interviewEngine,
     evidenceExtractionService,
+    practiceHistory,
+    codingInterviewer,
+    codingAttempts,
     candidateProfileService,
     resumeService,
     conversationPublisher,

@@ -19,13 +19,17 @@
     "db:generate": "npm run db:generate -w @nexoprep/database",
     "db:migrate": "npm run db:migrate -w @nexoprep/database",
     "db:deploy": "npm run db:deploy -w @nexoprep/database",
-    "test": "node --test src/features/behavior/analysis.test.js src/utils/reportMapper.test.js src/utils/formatDuration.test.js",
+    "test": "node --test src/features/coding/harness.test.js src/features/coding/interviewer.test.js src/features/coding/attemptSync.test.js src/features/behavior/analysis.test.js src/utils/reportMapper.test.js src/utils/formatDuration.test.js",
     "test:server": "npm run test -w @nexoprep/server"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/view": "^6.43.15",
     "@elevenlabs/client": "^1.8.1",
     "@mediapipe/tasks-vision": "^1.1.0",
     "@prisma/client": "^5.22.0",
+    "@uiw/react-codemirror": "^4.25.12",
     "fast-check": "^4.8.0",
     "pdfjs-dist": "^5.7.284",
     "react": "^19.2.5",

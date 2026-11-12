@@ -56,7 +56,7 @@ export default function VoiceInput({ onTranscript }) {
   }
 
   if (!supported) {
-    return <p className="text-xs text-slate-500">Voice input is not supported on this browser.</p>
+    return <p className="text-xs text-ink-faint">Voice input is not supported on this browser.</p>
   }
 
   return (

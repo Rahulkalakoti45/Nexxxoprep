@@ -1,7 +1,9 @@
 import type {
   AnswerScore,
+  AnswerVerdict,
   InterviewEvidence,
   InterviewSummary,
+  QuestionFeedback,
   SummaryDimensionScores,
   SummaryDomainScore,
 } from '@nexoprep/types'
@@ -94,6 +96,65 @@ export function parseDomainScores(value: unknown): SummaryDomainScore[] | undefi
   return rows.length ? rows.slice(0, 8) : undefined
 }
 
+const VERDICTS: AnswerVerdict[] = ['strong', 'okay', 'weak']
+
+/** Lower-case, straight quotes, single spaces, no punctuation: how a quote is matched against an answer. */
+export function normalizeForQuote(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[^a-z0-9' ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function boundedString(value: unknown, max: number): string {
+  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, max) : ''
+}
+
+/**
+ * Keeps only feedback that points at a question the candidate actually answered, at most one entry
+ * per question. A quote survives only when it appears (ignoring case and punctuation) in that
+ * answer: the report promises every comment can be checked against what was said.
+ */
+export function parseQuestionFeedback(value: unknown, evidence: InterviewEvidence): QuestionFeedback[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const answers = new Map<number, string>()
+  for (const pair of evidence.questionsAnswered) {
+    if (pair.answer && pair.answer.trim()) answers.set(pair.sequence, normalizeForQuote(pair.answer))
+  }
+
+  const rows: QuestionFeedback[] = []
+  const seen = new Set<number>()
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue
+    const raw = item as Record<string, unknown>
+    const sequence = typeof raw.sequence === 'number' ? raw.sequence : Number(raw.sequence)
+    const answer = answers.get(sequence)
+    if (answer === undefined || seen.has(sequence)) continue
+
+    const verdict = VERDICTS.find((v) => v === String(raw.verdict ?? '').toLowerCase().trim())
+    if (!verdict) continue
+
+    const quote = boundedString(raw.quote, 240).replace(/^["']+|["']+$/g, '')
+    const normalizedQuote = normalizeForQuote(quote)
+    const quoteIsReal = normalizedQuote.split(' ').length >= 2 && answer.includes(normalizedQuote)
+
+    seen.add(sequence)
+    rows.push({
+      sequence,
+      topic: boundedString(raw.topic, 40) || 'General',
+      verdict,
+      quote: quoteIsReal ? quote : null,
+      whatWorked: boundedString(raw.whatWorked, 400),
+      whatWasMissing: boundedString(raw.whatWasMissing, 400),
+      betterAnswer: boundedString(raw.betterAnswer, 1200),
+    })
+  }
+  return rows.length ? rows.sort((a, b) => a.sequence - b.sequence) : undefined
+}
+
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value
@@ -153,7 +214,9 @@ export class InterviewSummaryService {
 
     try {
       const userPrompt = this.buildEvidencePrompt(evidence)
-      const raw = await this.gemini.generateText(EVIDENCE_GROUNDED_SYSTEM_PROMPT, userPrompt)
+      // Per-question feedback with a model answer for each question needs far more room than the
+      // headline summary alone.
+      const raw = await this.gemini.generateText(EVIDENCE_GROUNDED_SYSTEM_PROMPT, userPrompt, { maxOutputTokens: 12000 })
       const parsed = parseJsonObject(raw)
       return this.groundAgainstEvidence(parsed, evidence, heuristic)
     } catch (error) {
@@ -233,7 +296,16 @@ export class InterviewSummaryService {
       '- domainScores: group the ANSWERED questions by topic using short labels such as "Resume & Projects", "Frontend" or "Behavioral", and give each group a score and the number of answered questions in it.',
       'A candidate who did not answer, or who said they did not know, must receive a low score for that topic, never a missing one.',
       '',
-      'Return ONLY valid JSON with keys: strengths (string[]), weaknesses (string[]), keyTopics (string[]), recommendations (string[]), overallRating (number 0-10), technicalScore (number 0-10), communicationScore (number 0-10), confidenceScore (number 0-10), domainScores (array of {"domain": string, "score": number 0-10, "questions": integer}).',
+      'Per-question coaching (questionFeedback). Write ONE entry for EVERY question in questionsAnswered that has a non-empty answer:',
+      '- sequence: copy the "sequence" number of that question exactly.',
+      '- topic: a short label (same style as domainScores).',
+      '- verdict: "strong", "okay" or "weak".',
+      "- quote: copy 4-20 words EXACTLY as they appear in the candidate's answer that best show the verdict. Do not paraphrase, fix grammar or join separate sentences.",
+      '- whatWorked: one sentence on what the answer did well, or "" if nothing.',
+      '- whatWasMissing: one sentence naming the specific thing a strong answer would have added.',
+      "- betterAnswer: a 60-120 word answer the candidate could have given, in first person, using ONLY facts from the candidate's own answer and resumeContext (projects, skills, experience). You may add general technical reasoning (trade-offs, failure handling, measurement) but never invent employers, metrics, project names or technologies the candidate did not mention.",
+      '',
+      'Return ONLY valid JSON with keys: strengths (string[]), weaknesses (string[]), keyTopics (string[]), recommendations (string[]), overallRating (number 0-10), technicalScore (number 0-10), communicationScore (number 0-10), confidenceScore (number 0-10), domainScores (array of {"domain": string, "score": number 0-10, "questions": integer}), questionFeedback (array of {"sequence": integer, "topic": string, "verdict": "strong"|"okay"|"weak", "quote": string, "whatWorked": string, "whatWasMissing": string, "betterAnswer": string}).',
     ].join('\n')
   }
 
@@ -269,6 +341,8 @@ export class InterviewSummaryService {
     if (dimensionScores) summary.dimensionScores = dimensionScores
     const domainScores = parseDomainScores(parsed.domainScores)
     if (domainScores) summary.domainScores = domainScores
+    const questionFeedback = parseQuestionFeedback(parsed.questionFeedback, evidence)
+    if (questionFeedback) summary.questionFeedback = questionFeedback
     return summary
   }
 

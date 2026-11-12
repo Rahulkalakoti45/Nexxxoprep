@@ -1,45 +1,136 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import BehaviorReportSection from '../features/behavior/BehaviorReportSection.jsx'
+import AnswerReviewSection from '../features/report/AnswerReviewSection.jsx'
 import { getSession } from '../services/backend/sessionsApi.js'
 import { mapSessionToReport } from '../utils/reportMapper.js'
 import { formatMinutes } from '../utils/formatDuration.js'
+import { Badge, ButtonLink, Card, CardHeader, EmptyState, ScoreBar, ScoreRing, Skeleton } from '../components/ui/index.jsx'
+import { scoreTone } from '../components/ui/helpers.js'
+import { IconArrowRight, IconCheck, IconClock, IconLayers, IconMic, IconSparkle, IconTarget } from '../components/ui/icons.jsx'
 
-const CLASSIC_DOMAINS = ['DSA', 'System Design', 'HR']
+// Placeholder text the grounded summary uses when it had nothing to say; never shown as a finding.
+const NOT_FINDINGS = new Set(['not evaluated', 'insufficient evidence'])
+const realItems = (items) => (items || []).filter((item) => item && !NOT_FINDINGS.has(String(item).trim().toLowerCase()))
 
-function domainChartData(domainBreakdown) {
-  // The classic interview scores DSA / System Design / HR. A conversational interview groups its
-  // questions by whatever topics actually came up, so those are shown as they are.
-  const rows = domainBreakdown || []
-  const wanted = rows.every((item) => CLASSIC_DOMAINS.includes(item.domain)) ? CLASSIC_DOMAINS : rows.map((item) => item.domain)
-  return wanted.map((domain) => {
-    const found = rows.find((item) => item.domain === domain)
-    return { domain, score: found?.avgScore ?? 0 }
-  })
+function levelFor(score) {
+  if (score >= 85) return 'Strong'
+  if (score >= 70) return 'Good'
+  if (score >= 50) return 'Developing'
+  return 'Early days'
 }
 
-function ReportStateMessage({ title, message, showBackLink = true }) {
+function headlineFor(score) {
+  if (score >= 85) return 'Interview-ready on this one.'
+  if (score >= 70) return 'Solid. A few answers away from great.'
+  if (score >= 50) return 'Good foundation. Clear things to sharpen.'
+  return 'Every expert started here. Here’s what to fix first.'
+}
+
+function ReportSkeleton() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#111620] p-10 text-center">
-      <p className="text-lg text-slate-200">{title}</p>
-      {message ? <p className="mt-2 text-sm text-slate-400">{message}</p> : null}
-      {showBackLink ? (
-        <Link to="/dashboard" className="mt-5 inline-flex rounded-lg bg-slate-100 px-4 py-2 text-slate-900">
-          Back to Dashboard
-        </Link>
-      ) : null}
+    <div className="space-y-6" aria-busy="true" aria-label="Loading report">
+      <Skeleton className="h-56 w-full rounded-3xl" />
+      <div className="grid gap-5 md:grid-cols-2">
+        <Skeleton className="h-40" />
+        <Skeleton className="h-40" />
+      </div>
+      <Skeleton className="h-72 w-full" />
     </div>
+  )
+}
+
+function ReportStateMessage({ title, message }) {
+  return (
+    <EmptyState
+      icon={<IconLayers />}
+      title={title}
+      body={message}
+      action={
+        <ButtonLink to="/dashboard" variant="secondary">
+          Back to home
+        </ButtonLink>
+      }
+    />
+  )
+}
+
+function FindingList({ title, items, tone, icon, empty }) {
+  const styles = {
+    good: { ring: 'border-emerald-400/20', icon: 'bg-emerald-400/15 text-emerald-300' },
+    bad: { ring: 'border-rose-400/20', icon: 'bg-rose-400/15 text-rose-300' },
+  }[tone]
+  return (
+    <Card className={styles.ring}>
+      <div className="flex items-center gap-2.5">
+        <span className={`grid h-8 w-8 place-items-center rounded-lg ${styles.icon}`}>{icon}</span>
+        <h3 className="text-lg font-semibold text-ink">{title}</h3>
+      </div>
+      {items.length ? (
+        <ul className="mt-4 space-y-2.5">
+          {items.map((item) => (
+            <li key={item} className="flex gap-2.5 text-[15px] leading-relaxed text-ink-soft">
+              <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${tone === 'good' ? 'bg-emerald-400' : 'bg-rose-400'}`} aria-hidden="true" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-sm text-ink-muted">{empty}</p>
+      )}
+    </Card>
+  )
+}
+
+function DeliveryTile({ label, value, hint }) {
+  return (
+    <div className="rounded-xl border border-line bg-inset/60 p-4">
+      <p className="text-xs font-medium text-ink-muted">{label}</p>
+      <p className="mt-1.5 font-display text-2xl font-semibold text-ink">{value}</p>
+      {hint ? <p className="mt-0.5 text-xs text-ink-faint">{hint}</p> : null}
+    </div>
+  )
+}
+
+/** Per-question card for the classic (typed) interview mode. */
+function ClassicAnswerCard({ entry }) {
+  const missing =
+    entry.question.expectedKeywords
+      ?.filter((kw) => !(entry.feedback.meta?.domainTerms || []).some((m) => m.toLowerCase().includes(kw.toLowerCase())))
+      .slice(0, 3) || []
+  return (
+    <article className="rounded-2xl border border-line bg-inset/60 p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs text-ink-muted">
+            {entry.question.roundName ? `${entry.question.roundName} · ` : ''}
+            {entry.question.domain}
+          </p>
+          <p className="mt-1 font-semibold text-ink">{entry.question.question}</p>
+        </div>
+        <ScoreRing score={entry.feedback.score} size={52} stroke={5} />
+      </div>
+      <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <div className="rounded-xl border border-line bg-surface p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">You said</p>
+          <p className="mt-1.5 whitespace-pre-wrap text-ink-soft">{entry.answer || '(skipped)'}</p>
+        </div>
+        <div className="space-y-2 rounded-xl border border-line bg-surface p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Feedback</p>
+          <p className="text-ink-soft">{entry.feedback.suggestions?.[0] || 'No specific suggestion.'}</p>
+          {missing.length ? (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-xs text-ink-muted">Missing:</span>
+              {missing.map((kw) => (
+                <Badge key={kw} tone="warn">
+                  {kw}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </article>
   )
 }
 
@@ -84,276 +175,137 @@ export default function ReportPage() {
   }, [sessionId])
 
   if (status === 'no_session') {
-    return (
-      <ReportStateMessage
-        title="No interview selected."
-        message="Choose a past interview from your Dashboard to view its report."
-      />
-    )
+    return <ReportStateMessage title="Pick an interview to review" message="Open any past interview from your home page to see its report." />
   }
-
-  if (status === 'loading') {
-    return <ReportStateMessage title="Loading your report…" showBackLink={false} />
-  }
-
+  if (status === 'loading') return <ReportSkeleton />
   if (status === 'not_found') {
-    return (
-      <ReportStateMessage
-        title="No report found for this interview yet."
-        message="The report may still be generating — try refreshing in a moment."
-      />
-    )
+    return <ReportStateMessage title="Your report is still being written" message="This usually takes under a minute after the interview ends. Refresh in a moment." />
   }
-
   if (status === 'error') {
-    return <ReportStateMessage title="Something went wrong loading this report." message={errorMessage} />
+    return <ReportStateMessage title="We couldn’t load this report" message={errorMessage} />
   }
 
-  const domainBreakdown = activeReport.domainBreakdown || []
-  const weakestDomains = activeReport.weakDomains || domainBreakdown.slice().sort((a, b) => a.avgScore - b.avgScore).slice(0, 2).map((d) => d.domain)
-
-  const domainBars = domainChartData(domainBreakdown)
-  const breakdownPie = domainBreakdown.map((d) => ({ name: d.domain, value: d.count }))
-  const intelligence = activeReport.intelligence || {}
-  const heatmap = intelligence.heatmap || {}
+  const report = activeReport
+  const score = report.overallScore ?? 0
+  const domains = (report.domainBreakdown || []).slice().sort((a, b) => b.avgScore - a.avgScore)
+  const strengths = realItems(report.strengthsSummary)
+  const weaknesses = realItems(report.weaknessSummary)
+  const nextSteps = realItems(report.roadmap?.dailyPlan)
+  const patterns = report.patternAnalysis || {}
+  const fillers = report.intelligence?.patternAnalysis?.fillerWordsDetected ?? 0
+  const reviews = report.questionReviews || []
+  const needsWork = reviews.filter((r) => r.verdict === 'weak').length
+  const createdAt = report.createdAt ? new Date(report.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : null
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h2 className="text-2xl font-semibold">Interview Report</h2>
-            <p className="mt-2 text-slate-400">
-              {activeReport.config.role} - {activeReport.config.company} - {activeReport.config.difficulty}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-5 py-4 text-right">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Final Score</p>
-            <p className="mt-1 text-3xl font-semibold">{activeReport.overallScore}%</p>
-            <p className="mt-1 text-sm text-slate-300">Level: {activeReport.level || '—'}</p>
-          </div>
-        </div>
+      <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink">
+        <IconArrowRight className="h-4 w-4 rotate-180" /> Home
+      </Link>
 
-        <div className="mt-5 grid grid-cols-3 gap-4">
-          <article className="rounded-xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/5">
-            <p className="text-sm text-slate-400">Recommendation</p>
-            <p className="mt-2 text-sm text-slate-200">{activeReport.recommendation || 'Keep practicing and iterate.'}</p>
-          </article>
-          <article className="rounded-xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/5">
-            <p className="text-sm text-slate-400">Duration</p>
-            <p className="mt-2 text-3xl font-semibold">{formatMinutes(activeReport.durationSeconds)}</p>
-          </article>
-          <article className="rounded-xl border border-white/10 bg-black/20 p-4 transition hover:bg-white/5">
-            <p className="text-sm text-slate-400">Questions</p>
-            <p className="mt-2 text-3xl font-semibold">{activeReport.questionCount ?? activeReport.answers.length}</p>
-          </article>
+      {/* Hero: the score, what it means, and the facts of the interview. */}
+      <section className="relative overflow-hidden rounded-3xl border border-line-strong bg-gradient-to-br from-raised via-surface to-surface p-6 shadow-card sm:p-8">
+        <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-brand-500/15 blur-3xl" aria-hidden="true" />
+        <div className="relative flex flex-col gap-8 md:flex-row md:items-center">
+          <div className="flex justify-center md:block">
+            <ScoreRing score={score} size={168} stroke={12} label="overall" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={scoreTone(score)}>{report.level || levelFor(score)}</Badge>
+              {createdAt ? <span className="text-xs text-ink-muted">{createdAt}</span> : null}
+            </div>
+            <h1 className="mt-3 text-3xl font-semibold text-ink sm:text-4xl">{headlineFor(score)}</h1>
+            <p className="mt-2 text-ink-muted">
+              {report.config.role} · {report.config.company} · {report.config.difficulty}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2.5 text-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-inset px-3 py-1.5 text-ink-soft">
+                <IconClock className="h-4 w-4 text-ink-faint" /> {formatMinutes(report.durationSeconds)}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-inset px-3 py-1.5 text-ink-soft">
+                <IconMic className="h-4 w-4 text-ink-faint" /> {report.questionCount ?? report.answers.length} questions answered
+              </span>
+              {needsWork ? (
+                <a href="#answers" className="inline-flex items-center gap-1.5 rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-rose-100 hover:bg-rose-400/15">
+                  <IconTarget className="h-4 w-4" /> {needsWork} {needsWork === 1 ? 'answer' : 'answers'} to work on
+                </a>
+              ) : null}
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-5">
-        <article className="rounded-2xl border border-white/10 bg-[#111620] p-5">
-          <h3 className="text-lg font-semibold">Domain-wise Breakdown</h3>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={domainBars}>
-                <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="domain"
-                  stroke="#94a3b8"
-                  interval={0}
-                  tickFormatter={(name) => (name.length > 15 ? `${name.slice(0, 14)}…` : name)}
-                />
-                <YAxis stroke="#94a3b8" domain={[0, 100]} />
-                <Tooltip />
-                <Bar dataKey="score" fill="#e2e8f0" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Scores are derived from your per-question feedback.</p>
-        </article>
+      <div className="grid gap-5 md:grid-cols-2">
+        <FindingList title="What went well" items={strengths} tone="good" icon={<IconCheck className="h-4 w-4" />} empty="Not enough was said to call out strengths yet." />
+        <FindingList title="What to work on" items={weaknesses} tone="bad" icon={<IconTarget className="h-4 w-4" />} empty="Nothing major stood out." />
+      </div>
 
-        <article className="rounded-2xl border border-white/10 bg-[#111620] p-5">
-          <h3 className="text-lg font-semibold">Weak Area Analysis</h3>
-          <p className="mt-2 text-sm text-slate-400">
-            Lowest scoring domains: <span className="text-slate-200">{weakestDomains.join(', ') || '—'}</span>
-          </p>
-          <div className="mt-4 space-y-3">
-            {(activeReport.weaknessSummary || []).map((item) => (
-              <div key={item} className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-slate-200">
-                {item}
-              </div>
+      <div className="grid gap-5 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader title="Score by topic" subtitle="How each area of the interview went." />
+          <div className="mt-5 space-y-4">
+            {domains.length ? (
+              domains.map((d) => <ScoreBar key={d.domain} label={d.domain} score={d.avgScore} hint={d.count > 1 ? `${d.count} questions` : null} />)
+            ) : (
+              <p className="text-sm text-ink-muted">Topic scores weren’t available for this interview.</p>
+            )}
+          </div>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader title="How you spoke" subtitle="Measured from your transcript." />
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <DeliveryTile label="Avg answer" value={`${patterns.averageAnswerLength ?? 0}`} hint="words · aim for 60–120" />
+            <DeliveryTile label="Filler words" value={fillers} hint="um, like, basically…" />
+            <DeliveryTile label="Hedged answers" value={`${patterns.hesitationScore ?? 0}%`} hint="“maybe”, “I think”, “not sure”" />
+            <DeliveryTile label="Consistency" value={`${patterns.consistencyScore ?? 0}%`} hint="steady answer length" />
+          </div>
+        </Card>
+      </div>
+
+      <div id="answers" className="scroll-mt-24">
+        <AnswerReviewSection reviews={reviews} />
+      </div>
+
+      {report.answers?.length ? (
+        <Card>
+          <CardHeader title="Question by question" subtitle="Every answer with its score and feedback." />
+          <div className="mt-5 space-y-4">
+            {report.answers.map((entry) => (
+              <ClassicAnswerCard key={entry.question.id} entry={entry} />
             ))}
           </div>
-          <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Improvement tips</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">
-              <li>Use a 3-part structure (context → action → outcome) for every answer.</li>
-              <li>Add 1 measurable result per answer (latency, users, revenue, time saved).</li>
-              <li>Include 1 domain keyword to show signal (e.g., cache/latency for System Design).</li>
-            </ul>
-          </div>
-        </article>
-      </section>
+        </Card>
+      ) : null}
 
-      <section className="grid grid-cols-2 gap-5">
-        <article className="rounded-2xl border border-white/10 bg-[#111620] p-5">
-          <h3 className="text-lg font-semibold">Answer Pattern Analysis</h3>
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Avg length</p>
-              <p className="mt-2 text-2xl font-semibold">{activeReport.patternAnalysis?.averageAnswerLength ?? 0} words</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Hesitation</p>
-              <p className="mt-2 text-2xl font-semibold">{activeReport.patternAnalysis?.hesitationScore ?? 0}%</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Consistency</p>
-              <p className="mt-2 text-2xl font-semibold">{activeReport.patternAnalysis?.consistencyScore ?? 0}%</p>
-            </div>
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            Hesitation derived from answer language patterns; behavior metrics sync to the analytics API when online.
-          </p>
-          <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-300">
-            Hesitations: {intelligence.patternAnalysis?.hesitationWordsDetected ?? 0} • Fillers:{' '}
-            {intelligence.patternAnalysis?.fillerWordsDetected ?? 0} • Skipped domains:{' '}
-            {(intelligence.patternAnalysis?.skippedDomains || []).join(', ') || '--'}
-          </div>
-        </article>
+      <BehaviorReportSection behavior={report.behavior} />
 
-        <article className="rounded-2xl border border-white/10 bg-[#111620] p-5">
-          <h3 className="text-lg font-semibold">Question Mix</h3>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={breakdownPie} dataKey="value" nameKey="name" outerRadius={90} fill="#e2e8f0" />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="mt-2 text-xs text-slate-400">Distribution across domains in this interview.</p>
-        </article>
-      </section>
-
-      <BehaviorReportSection behavior={activeReport.behavior} />
-
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-        <h3 className="text-xl font-semibold">Improvement Roadmap</h3>
-        <div className="mt-4 grid grid-cols-2 gap-5">
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Daily plan</p>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-200">
-              {(activeReport.roadmap?.dailyPlan || []).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Weekly goals</p>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-200">
-              {(activeReport.roadmap?.weeklyGoals || []).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Monthly goals</p>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-200">
-              {(activeReport.roadmap?.monthlyGoals || []).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Domain Heatmap</p>
-            <p className="mt-2 text-sm text-slate-200">Strongest: {heatmap.strongestDomain || '--'}</p>
-            <p className="text-sm text-slate-200">Weakest: {heatmap.weakestDomain || '--'}</p>
-          </div>
+      <section className="relative overflow-hidden rounded-3xl border border-brand-400/25 bg-gradient-to-br from-brand-500/15 via-surface to-surface p-6 shadow-card sm:p-8">
+        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-300">
+          <IconSparkle className="h-3.5 w-3.5" /> Before your next interview
+        </p>
+        {nextSteps.length ? (
+          <ol className="mt-3 space-y-3">
+            {nextSteps.slice(0, 5).map((item, index) => (
+              <li key={item} className="flex gap-3 text-[15px] text-ink-soft">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-500/20 text-xs font-semibold text-brand-200">{index + 1}</span>
+                {item}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-2 text-ink-soft">Review the answers marked “Needs work” above, then try them again out loud.</p>
+        )}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <ButtonLink to="/setup" size="lg">
+            <IconMic className="h-4 w-4" /> Practise again
+          </ButtonLink>
+          <ButtonLink to="/dashboard" variant="secondary" size="lg">
+            See my progress
+          </ButtonLink>
         </div>
+        <p className="mt-4 text-xs text-ink-faint">Your next interview will come back to the topics you found hardest here.</p>
       </section>
-
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-        <h3 className="text-xl font-semibold">Question-Level Analysis</h3>
-        <div className="mt-4 space-y-4">
-          {activeReport.answers.map((entry) => (
-            <article key={entry.question.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-medium text-slate-100">{entry.question.question}</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {entry.question.roundName ? `Round: ${entry.question.roundName} • ` : ''}
-                    Domain: {entry.question.domain} • Type: {entry.question.type}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-400">Score</p>
-                  <p className="text-xl font-semibold">{entry.feedback.score}%</p>
-                  <p className="mt-1 text-xs text-slate-400">Status: {entry.status || 'answered'}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <div className="rounded-lg border border-white/10 bg-[#0a0f17] p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Clarity</p>
-                  <p className="mt-1 text-lg font-semibold">{entry.feedback.clarityScore ?? '--'}%</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0a0f17] p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Confidence</p>
-                  <p className="mt-1 text-lg font-semibold">{entry.feedback.confidenceScore ?? '--'}%</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0a0f17] p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Words</p>
-                  <p className="mt-1 text-lg font-semibold">{entry.feedback.meta?.wordCount ?? 0}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                <div className="rounded-lg border border-white/10 bg-[#0a0f17] p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Your answer</p>
-                  <p className="mt-2 whitespace-pre-wrap text-slate-200">{entry.answer || '— (skipped)'}</p>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0a0f17] p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Feedback</p>
-                  <p className="mt-2 text-slate-200">{entry.feedback.suggestions?.[0] || '—'}</p>
-                  <p className="mt-2 text-xs text-slate-400">Strength: {entry.feedback.strengths?.[0] || '—'}</p>
-                  <p className="mt-1 text-xs text-slate-400">Weakness: {entry.feedback.weaknesses?.[0] || '—'}</p>
-                  <p className="mt-2 text-xs text-slate-400">
-                    Keywords matched: {(entry.feedback.meta?.domainTerms || []).join(', ') || '--'}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Missing concepts:{' '}
-                    {entry.question.expectedKeywords
-                      ?.filter((kw) => !(entry.feedback.meta?.domainTerms || []).some((m) => m.toLowerCase().includes(kw.toLowerCase())))
-                      .slice(0, 3)
-                      .join(', ') || '--'}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Follow-up recommendation: {entry.question.followUpQuestions?.[0] || 'Deepen with one extra trade-off.'}
-                  </p>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {(activeReport.backendSessionId || activeReport.backendError) && (
-        <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-          <h3 className="text-xl font-semibold">Backend Sync</h3>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-300">
-            {activeReport.backendSessionId && (
-              <li>Session persisted: {activeReport.backendSessionId}</li>
-            )}
-            {activeReport.backendReportId && <li>Report ID: {activeReport.backendReportId}</li>}
-            {activeReport.backendError && <li className="text-yellow-200">{activeReport.backendError}</li>}
-          </ul>
-        </section>
-      )}
-
-      <Link to="/dashboard" className="inline-flex rounded-lg bg-slate-100 px-4 py-2 text-slate-900">
-        Back to Dashboard
-      </Link>
     </div>
   )
 }

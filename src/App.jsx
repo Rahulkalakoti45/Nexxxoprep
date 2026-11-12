@@ -7,6 +7,9 @@ import LoginPage from './pages/LoginPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
 import ResumeUploadPage from './pages/ResumeUploadPage.jsx'
+import CodingHomePage from './pages/CodingHomePage.jsx'
+import CodingSessionPage from './pages/CodingSessionPage.jsx'
+import CodingResultPage from './pages/CodingResultPage.jsx'
 import InterviewV2Page from './interview-v2/pages/InterviewV2Page.jsx'
 import InterviewSetupPage from './modules/interview/pages/InterviewSetupPage.jsx'
 import StandardInterviewPage from './modules/interview/pages/StandardInterviewPage.jsx'
@@ -40,6 +43,9 @@ function App() {
         <Route path="/simulated" element={<SimulatedTestWrapper />} />
         <Route path="/report" element={<ReportPage />} />
         <Route path="/report/:sessionId" element={<ReportPage />} />
+        <Route path="/coding" element={<CodingHomePage />} />
+        <Route path="/coding/result/:attemptId" element={<CodingResultPage />} />
+        <Route path="/coding/:problemId" element={<CodingSessionPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

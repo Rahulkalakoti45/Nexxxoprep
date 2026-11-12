@@ -16,7 +16,7 @@ export default function TimerPanel({ startedAt, estimatedTime = 0 }) {
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <h3 className="mb-2 text-sm font-semibold text-slate-900">Timer</h3>
       <p className="text-sm text-slate-700">Elapsed: {elapsed}s</p>
-      <p className="text-xs text-slate-500">Suggested for this question: {estimatedTime}s</p>
+      <p className="text-xs text-ink-faint">Suggested for this question: {estimatedTime}s</p>
     </div>
   )
 }

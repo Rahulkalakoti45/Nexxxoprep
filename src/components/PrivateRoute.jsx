@@ -5,7 +5,7 @@ export default function PrivateRoute({ children }) {
   const { user, hydrated } = useInterview()
 
   if (!hydrated) {
-    return <div className="p-6 text-slate-300">Loading session...</div>
+    return <div className="p-6 text-ink-soft">Loading session...</div>
   }
 
   if (!user) {

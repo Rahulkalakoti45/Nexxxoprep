@@ -16,6 +16,7 @@ import { buildPromptContextSnapshot } from './prompts/interviewer.prompt.js'
 import { QuestionDiversityService } from './question-diversity.service.js'
 import type { ReportService } from '@nexoprep/report-service'
 import type { EvidenceExtractionService } from '../evidence/evidence-extraction.service.js'
+import type { PracticeHistoryService } from '../progress/practice-history.service.js'
 
 export interface InterviewContextInput {
   userId: string
@@ -37,6 +38,7 @@ export class InterviewEngineService {
     private readonly reportService: ReportService,
     private readonly prisma: DatabaseClient,
     private readonly evidenceExtractionService: EvidenceExtractionService,
+    private readonly practiceHistoryService?: PracticeHistoryService,
   ) {}
 
   async initializeInterview(
@@ -92,6 +94,7 @@ export class InterviewEngineService {
         memory.lastAnswerScore = null
         memory.lastFollowUp = null
         memory.interviewSummary = null
+        await this.loadPracticeFocus(memory)
       }
     }
 
@@ -344,6 +347,28 @@ export class InterviewEngineService {
       lastAnswerScore: memory.lastAnswerScore,
       coveredTopics: memory.coveredTopics.slice(-8),
       firstQuestionPending: memory.firstQuestionPending,
+    }
+  }
+
+  /**
+   * Carries the weak areas from the candidate's earlier sessions into this one, so the interviewer
+   * can revisit them. Never blocks the interview: without history the interview runs as before.
+   */
+  private async loadPracticeFocus(memory: ConversationMemory): Promise<void> {
+    if (!this.practiceHistoryService || !memory.userId) return
+    try {
+      const progress = await this.practiceHistoryService.loadProgress(memory.userId, { excludeSessionId: memory.sessionId })
+      memory.practiceFocus = progress.nextFocus
+      memory.previousSessionCount = progress.sessionCount
+      if (progress.nextFocus.length) {
+        console.log('[INTERVIEW_INIT:practice_focus]', {
+          sessionId: memory.sessionId,
+          previousSessions: progress.sessionCount,
+          focus: progress.nextFocus.map((f) => f.topic),
+        })
+      }
+    } catch (err) {
+      console.error('[INTERVIEW_INIT] could not load practice history; continuing without it', err)
     }
   }
 

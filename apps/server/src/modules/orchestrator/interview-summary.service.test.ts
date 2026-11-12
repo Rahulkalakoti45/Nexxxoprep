@@ -7,6 +7,7 @@ import {
   parseDimensionScores,
   parseDomainScores,
   parseJsonObject,
+  parseQuestionFeedback,
 } from './interview-summary.service.js'
 import { GeminiService } from './gemini.service.js'
 
@@ -196,4 +197,51 @@ test('generateText disables thinking on flash models and fails loudly on a trunc
     globalThis.fetch = realFetch
     console.log = realLog
   }
+})
+
+test('parseQuestionFeedback keeps real quotes, drops invented ones, and ignores unknown questions', () => {
+  const rows = parseQuestionFeedback(
+    [
+      {
+        sequence: 0,
+        topic: 'Frontend',
+        verdict: 'Okay',
+        // Different punctuation and case still count as the candidate's words.
+        quote: '"server-side rendering sends ready HTML, so SEO is better"',
+        whatWorked: 'Named the SEO benefit.',
+        whatWasMissing: 'Did not mention hydration.',
+        betterAnswer: 'With client-side rendering the browser builds the page…',
+      },
+      // A quote the candidate never said is removed, but the coaching stays.
+      { sequence: 2, topic: 'Projects', verdict: 'weak', quote: 'I scaled MedXNet to a million users', whatWorked: '', whatWasMissing: 'No architecture.', betterAnswer: 'x' },
+      // Duplicate entry for the same question: only the first is kept.
+      { sequence: 2, topic: 'Again', verdict: 'strong', quote: '', whatWorked: '', whatWasMissing: '', betterAnswer: '' },
+      // Points at a question that does not exist, or has an unknown verdict.
+      { sequence: 99, topic: 'Ghost', verdict: 'weak' },
+      { sequence: 0, topic: 'Bad', verdict: 'excellent' },
+      'junk',
+    ],
+    evidence(),
+  )
+
+  assert.equal(rows?.length, 2)
+  assert.equal(rows?.[0]?.verdict, 'okay')
+  assert.equal(rows?.[0]?.quote, 'server-side rendering sends ready HTML, so SEO is better')
+  assert.equal(rows?.[1]?.sequence, 2)
+  assert.equal(rows?.[1]?.quote, null)
+  assert.equal(rows?.[1]?.topic, 'Projects')
+  assert.equal(parseQuestionFeedback('nope', evidence()), undefined)
+  assert.equal(parseQuestionFeedback([], evidence()), undefined)
+})
+
+test('generateSummary attaches grounded per-question feedback', async () => {
+  const reply = {
+    ...GOOD_REPLY,
+    questionFeedback: [
+      { sequence: 2, topic: 'Projects', verdict: 'okay', quote: 'healthcare coordination platform I built with React', whatWorked: 'Clear one-line pitch.', whatWasMissing: 'No design decisions.', betterAnswer: 'MedXNet is…' },
+    ],
+  }
+  const service = new InterviewSummaryService(fakeGemini(async () => JSON.stringify(reply)))
+  const summary = await service.generateSummary(memory, evidence())
+  assert.deepEqual(summary.questionFeedback?.map((row) => [row.sequence, row.quote]), [[2, 'healthcare coordination platform I built with React']])
 })

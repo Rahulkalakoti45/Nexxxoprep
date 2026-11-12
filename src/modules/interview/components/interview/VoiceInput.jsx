@@ -3,17 +3,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 export default function VoiceInput({ onTranscript }) {
   const recognitionRef = useRef(null)
   const [listening, setListening] = useState(false)
-  const [supported, setSupported] = useState(true)
   const [error, setError] = useState('')
   const lastRef = useRef('')
 
   const SpeechRecognition = useMemo(() => window.SpeechRecognition || window.webkitSpeechRecognition, [])
+  const supported = Boolean(SpeechRecognition)
 
   useEffect(() => {
-    if (!SpeechRecognition) {
-      setSupported(false)
-      return
-    }
+    if (!SpeechRecognition) return
     const rec = new SpeechRecognition()
     rec.continuous = true
     rec.interimResults = false
@@ -48,23 +45,23 @@ export default function VoiceInput({ onTranscript }) {
   }
 
   if (!supported) {
-    return <p className="text-xs text-slate-400">Voice input is not supported on this browser.</p>
+    return <p className="text-xs text-ink-faint">Voice typing isn&apos;t supported in this browser. Type your answer instead.</p>
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={toggle}
-        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
-          listening ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-900'
+        aria-pressed={listening}
+        className={`inline-flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${
+          listening ? 'bg-rose-500 text-white' : 'border border-line-strong bg-white/[0.04] text-ink hover:bg-white/[0.08]'
         }`}
       >
-        <span className={`h-2.5 w-2.5 rounded-full ${listening ? 'animate-pulse bg-white' : 'bg-emerald-500'}`} />
-        {listening ? 'Stop Mic' : 'Start Mic'}
+        <span className={`h-2 w-2 rounded-full ${listening ? 'animate-pulse bg-white' : 'bg-rose-400'}`} aria-hidden="true" />
+        {listening ? 'Stop dictating' : 'Dictate'}
       </button>
-      {error ? <p className="text-xs text-red-300">{error}</p> : null}
+      {error ? <p className="text-xs text-rose-200">{error}</p> : null}
     </div>
   )
 }
-

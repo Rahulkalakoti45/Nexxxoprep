@@ -24,15 +24,15 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children
 
     return (
-      <section className="rounded-2xl border border-red-300/30 bg-[#111620] p-6">
-        <h2 className="text-xl font-semibold text-slate-100">Interview Session Recovered</h2>
-        <p className="mt-2 text-slate-300">
+      <section className="rounded-2xl border border-red-300/30 bg-surface p-6">
+        <h2 className="text-xl font-semibold text-ink">Interview Session Recovered</h2>
+        <p className="mt-2 text-ink-soft">
           A runtime issue occurred, but your app is still safe. Restart the interview session to continue.
         </p>
         <button
           type="button"
           onClick={this.handleRestart}
-          className="mt-4 rounded-lg bg-slate-100 px-4 py-2 text-slate-900 transition hover:opacity-90"
+          className="mt-4 rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 transition hover:opacity-90"
         >
           Restart Interview
         </button>

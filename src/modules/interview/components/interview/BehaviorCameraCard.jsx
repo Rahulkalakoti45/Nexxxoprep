@@ -27,7 +27,7 @@ const STATUS_POLL_INTERVAL_MS = 3000
  */
 export default function BehaviorCameraCard({ sessionId }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+    <div className="rounded-2xl border border-line bg-inset p-4">
       {/* Keyed by sessionId so a new interview always gets a fresh mount
           (fresh retry state, fresh camera) instead of carrying over state
           from a previous session. */}
@@ -110,8 +110,8 @@ function BehaviorCardBody({ sessionId }) {
     return (
       <>
         <CardHeader state="idle" />
-        <div className="mt-3 aspect-video overflow-hidden rounded-xl border border-white/10 bg-black/40">
-          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-slate-500">
+        <div className="mt-3 aspect-video overflow-hidden rounded-xl border border-line bg-inset">
+          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-ink-faint">
             {sessionId ? 'Starting behavior tracking…' : 'Behavior tracking will appear once the interview starts.'}
           </div>
         </div>
@@ -142,8 +142,8 @@ function CardHeader({ state }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
-        <p className="text-xs uppercase tracking-wide text-slate-400">Behavior Camera</p>
-        <h2 className="mt-1 text-lg font-semibold text-slate-100">Live Preview</h2>
+        <p className="text-xs uppercase tracking-wide text-ink-muted">Behavior Camera</p>
+        <h2 className="mt-1 text-lg font-semibold text-ink">Live Preview</h2>
       </div>
       <span className={`h-2.5 w-2.5 rounded-full ${dot[0]}`} title={dot[1]} />
     </div>
@@ -191,7 +191,7 @@ function BehaviorStream({ sessionId, onGiveUp }) {
     <>
       <CardHeader state={active ? 'active' : 'idle'} />
 
-      <div className="mt-3 aspect-video overflow-hidden rounded-xl border border-white/10 bg-black/40">
+      <div className="mt-3 aspect-video overflow-hidden rounded-xl border border-line bg-inset">
         {active ? (
           <img
             src={streamUrl}
@@ -200,7 +200,7 @@ function BehaviorStream({ sessionId, onGiveUp }) {
             onError={handleError}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-slate-500">
+          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs text-ink-faint">
             {sessionId
               ? gaveUp
                 ? 'Behavior tracking unavailable for this session.'
@@ -227,8 +227,8 @@ function MetricTiles({ values }) {
     <div className="mt-3 grid grid-cols-3 gap-2">
       {METRIC_FIELDS.map(({ key, label }) => (
         <div key={key} className="rounded-lg border border-white/5 bg-white/5 px-2 py-1.5 text-center">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p>
-          <p className="mt-0.5 text-sm font-medium text-slate-300">
+          <p className="text-[10px] uppercase tracking-wide text-ink-faint">{label}</p>
+          <p className="mt-0.5 text-sm font-medium text-ink-soft">
             {values && values[key] != null ? values[key] : '—'}
           </p>
         </div>
@@ -280,7 +280,7 @@ function BrowserBehavior({ sessionId }) {
     <>
       <CardHeader state={headerState} />
 
-      <div className="relative mt-3 aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+      <div className="relative mt-3 aspect-[4/3] overflow-hidden rounded-xl border border-line bg-inset">
         {/* Mirrored like a mirror so the preview moves the way the candidate does. */}
         <div className="absolute inset-0" style={{ transform: 'scaleX(-1)' }}>
           <video
@@ -296,30 +296,30 @@ function BrowserBehavior({ sessionId }) {
 
         {phase === 'requesting' ? (
           <Overlay>
-            <p className="font-medium text-slate-100">Allow camera access</p>
+            <p className="font-medium text-ink">Allow camera access</p>
             <p className="mt-1">Choose &ldquo;Allow&rdquo; in your browser&rsquo;s prompt to start behavior analysis.</p>
           </Overlay>
         ) : null}
 
         {phase === 'loading' ? (
           <Overlay>
-            <p className="font-medium text-slate-100">Loading on-device vision models&hellip;</p>
+            <p className="font-medium text-ink">Loading on-device vision models&hellip;</p>
             <div className="mx-auto mt-3 h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
               <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${Math.round(progress * 100)}%` }} />
             </div>
-            <p className="mt-1 text-slate-500">{Math.round(progress * 100)}% &middot; first time only</p>
+            <p className="mt-1 text-ink-faint">{Math.round(progress * 100)}% &middot; first time only</p>
           </Overlay>
         ) : null}
 
         {phase === 'error' ? (
           <Overlay>
-            <p className="font-medium text-slate-100">Behavior analysis is off</p>
+            <p className="font-medium text-ink">Behavior analysis is off</p>
             <p className="mt-1">{error?.message}</p>
-            <p className="mt-1 text-slate-500">The interview continues without it.</p>
+            <p className="mt-1 text-ink-faint">The interview continues without it.</p>
             <button
               type="button"
               onClick={retry}
-              className="mt-3 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-900 hover:bg-white"
+              className="mt-3 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-400 hover:bg-white"
             >
               Try again
             </button>
@@ -334,7 +334,7 @@ function BrowserBehavior({ sessionId }) {
       </div>
 
       <MetricTiles values={live?.tiles} />
-      <p className="mt-3 text-[11px] leading-snug text-slate-500">
+      <p className="mt-3 text-[11px] leading-snug text-ink-faint">
         Analysed on your device. Your video is never uploaded &mdash; only the scores are saved to your report.
       </p>
     </>
@@ -344,7 +344,7 @@ function BrowserBehavior({ sessionId }) {
 function Overlay({ children }) {
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 px-5 text-center text-xs text-slate-400"
+      className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 px-5 text-center text-xs text-ink-muted"
       role="status"
       aria-live="polite"
     >
@@ -354,7 +354,7 @@ function Overlay({ children }) {
 }
 
 function Chip({ children, tone = 'info' }) {
-  const colors = tone === 'warn' ? 'bg-amber-500/25 text-amber-100' : 'bg-black/60 text-slate-200'
+  const colors = tone === 'warn' ? 'bg-amber-500/25 text-amber-100' : 'bg-black/60 text-ink'
   return (
     <div className={`absolute inset-x-2 bottom-2 rounded-lg px-2.5 py-1 text-center text-[11px] ${colors}`} role="status">
       {children}

@@ -62,13 +62,13 @@ export default function InterviewSetupPage() {
   }
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
+    <section className="rounded-2xl border border-line bg-surface p-6">
       <h2 className="text-2xl font-semibold">Interview Setup</h2>
-      <p className="mt-2 text-slate-400">Choose your interview configuration to generate relevant question sets.</p>
+      <p className="mt-2 text-ink-muted">Choose your interview configuration to generate relevant question sets.</p>
 
       <form className="mt-6 grid grid-cols-3 gap-4" onSubmit={handleStart}>
         <label className="col-span-3 block">
-          <span className="text-sm text-slate-300">Interview Mode</span>
+          <span className="text-sm text-ink-soft">Interview Mode</span>
           <div className="mt-2 flex gap-2">
             {modes.map((mode) => (
               <button
@@ -78,9 +78,9 @@ export default function InterviewSetupPage() {
                 onClick={() => onChange('mode', mode.value)}
                 className={`rounded-lg border px-3 py-2 text-sm transition ${
                   form.mode === mode.value
-                    ? 'border-slate-200 bg-slate-100 text-slate-900'
-                    : 'border-white/15 bg-black/20 text-slate-200 hover:bg-white/10'
-                } ${mode.disabled ? 'cursor-not-allowed opacity-50 hover:bg-black/20' : ''}`}
+                    ? 'border-brand-400/70 bg-brand-500/15 text-ink shadow-glow'
+                    : 'border-line-strong bg-inset text-ink hover:bg-white/10'
+                } ${mode.disabled ? 'cursor-not-allowed opacity-50 hover:bg-inset' : ''}`}
               >
                 {mode.label}
               </button>
@@ -89,11 +89,11 @@ export default function InterviewSetupPage() {
         </label>
 
         <label className="block">
-          <span className="text-sm text-slate-300">Role</span>
+          <span className="text-sm text-ink-soft">Role</span>
           <select
             value={form.role}
             onChange={(event) => onChange('role', event.target.value)}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-[#0b0f17] px-3 py-2"
+            className="mt-2 w-full rounded-lg border border-line-strong bg-inset px-3 py-2"
           >
             {roles.map((role) => (
               <option key={role} value={role}>
@@ -104,11 +104,11 @@ export default function InterviewSetupPage() {
         </label>
 
         <label className="block">
-          <span className="text-sm text-slate-300">Difficulty</span>
+          <span className="text-sm text-ink-soft">Difficulty</span>
           <select
             value={form.difficulty}
             onChange={(event) => onChange('difficulty', event.target.value)}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-[#0b0f17] px-3 py-2"
+            className="mt-2 w-full rounded-lg border border-line-strong bg-inset px-3 py-2"
           >
             {difficulties.map((difficulty) => (
               <option key={difficulty} value={difficulty}>
@@ -119,11 +119,11 @@ export default function InterviewSetupPage() {
         </label>
 
         <label className="block">
-          <span className="text-sm text-slate-300">Company</span>
+          <span className="text-sm text-ink-soft">Company</span>
           <select
             value={form.company}
             onChange={(event) => onChange('company', event.target.value)}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-[#0b0f17] px-3 py-2"
+            className="mt-2 w-full rounded-lg border border-line-strong bg-inset px-3 py-2"
           >
             {companies.map((company) => (
               <option key={company} value={company}>
@@ -137,7 +137,7 @@ export default function InterviewSetupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-slate-100 px-4 py-2 font-medium text-slate-900 transition hover:opacity-90 disabled:opacity-60"
+            className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white hover:bg-brand-400 transition hover:opacity-90 disabled:opacity-60"
           >
             {loading ? 'Preparing Interview...' : 'Start Interview'}
           </button>

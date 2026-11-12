@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import useInterview from '../../../hooks/useInterview.js'
 import CompanySelector from '../components/setup/CompanySelector'
 import DifficultySelector from '../components/setup/DifficultySelector'
@@ -8,6 +8,26 @@ import RoleSelector from '../components/setup/RoleSelector'
 import LoadingScreen from '../components/shared/LoadingScreen'
 import { InterviewProvider } from '../context/InterviewContext'
 import { useInterviewSession } from '../hooks/useInterviewSession'
+import { Button, Card, PageHeader, Spinner } from '../../../components/ui/index.jsx'
+import { IconArrowRight, IconCheck, IconFile, IconMic } from '../../../components/ui/icons.jsx'
+
+// Sign-up offers short role names; setup uses the full ones.
+const ROLE_ALIASES = { Frontend: 'Frontend Developer', Backend: 'Backend Developer' }
+
+function Step({ number, title, hint, children }) {
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-line-strong font-mono text-xs text-ink-muted">{number}</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-sans text-base font-semibold text-ink">{title}</h3>
+          {hint ? <p className="mt-0.5 text-sm text-ink-muted">{hint}</p> : null}
+          <div className="mt-4">{children}</div>
+        </div>
+      </div>
+    </Card>
+  )
+}
 
 function SetupInner() {
   const navigate = useNavigate()
@@ -17,7 +37,7 @@ function SetupInner() {
   const defaults = useMemo(
     () => ({
       interviewMode: 'ai_simulated',
-      role: user?.targetRole || 'SDE',
+      role: ROLE_ALIASES[user?.targetRole] || user?.targetRole || 'SDE',
       company: 'Amazon',
       difficulty: 'Medium',
     }),
@@ -26,10 +46,19 @@ function SetupInner() {
 
   const [form, setForm] = useState(defaults)
   const [starting, setStarting] = useState(false)
+  const set = (key) => (value) => setForm((prev) => ({ ...prev, [key]: value }))
 
   const hasResume = Boolean(resume?.rawText || (Array.isArray(resume?.projects) && resume.projects.length))
+  const isVoice = form.interviewMode === 'ai_simulated'
+
+  const isCoding = form.interviewMode === 'coding'
 
   const start = async () => {
+    // The coding round has its own problem picker.
+    if (isCoding) {
+      navigate('/coding')
+      return
+    }
     setStarting(true)
     actions.clear()
     try {
@@ -42,73 +71,101 @@ function SetupInner() {
   }
 
   if (session && starting) {
-    return <LoadingScreen title="Starting interview…" subtitle="Generating company rounds and questions." />
+    return <LoadingScreen title="Setting up your interview…" subtitle="Reading your resume and planning the rounds." />
   }
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6 shadow-lg shadow-black/25">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">NexoPrep</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-100">Interview Setup</h2>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400">
-              Configure a realistic company interview flow. Questions progress round-by-round, not randomly.
+      <PageHeader eyebrow="New interview" title="Set up your practice" subtitle="Pick the job you're preparing for. The interviewer adapts its questions, follow-ups and difficulty to it." />
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-5">
+          <Step number={1} title="How do you want to practise?">
+            <InterviewModeSelector value={form.interviewMode} onChange={set('interviewMode')} />
+          </Step>
+          {isCoding ? null : (
+            <>
+          <Step number={2} title="Role" hint="Shapes which topics and rounds you get.">
+            <RoleSelector value={form.role} onChange={set('role')} />
+          </Step>
+          <Step number={3} title="Company" hint="Uses that company's round structure and priorities.">
+            <CompanySelector value={form.company} onChange={set('company')} />
+          </Step>
+          <Step number={4} title="Difficulty" hint="Controls how deep the follow-up questions go.">
+            <DifficultySelector value={form.difficulty} onChange={set('difficulty')} />
+          </Step>
+            </>
+          )}
+        </div>
+
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <Card className="border-line-strong">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-300">Your interview</p>
+            <p className="mt-2 font-display text-xl font-semibold text-ink">
+              {isCoding ? 'Coding round' : `${form.role} at ${form.company}`}
             </p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Resume integration</p>
-            <p className="mt-1 text-sm text-slate-200">{hasResume ? 'Enabled (projects + skills)' : 'Not detected'}</p>
-          </div>
-        </div>
-      </section>
+            <dl className="mt-4 space-y-2.5 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink-muted">Format</dt>
+                <dd className="text-ink">{isCoding ? 'Editor + AI interviewer' : isVoice ? 'Voice conversation' : 'Structured rounds'}</dd>
+              </div>
+              {isCoding ? (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Languages</dt>
+                  <dd className="text-ink">JavaScript, Python</dd>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-ink-muted">Difficulty</dt>
+                    <dd className="text-ink">{form.difficulty}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-ink-muted">Rounds</dt>
+                    <dd className="text-right text-ink">Resume · Technical · Behavioral</dd>
+                  </div>
+                </>
+              )}
+            </dl>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-        <p className="text-sm font-semibold text-slate-100">Interview Type</p>
-        <p className="mt-1 text-xs text-slate-400">Standard is the current MVP. AI Simulated is visible for the roadmap.</p>
-        <div className="mt-4">
-          <InterviewModeSelector value={form.interviewMode} onChange={(v) => setForm((p) => ({ ...p, interviewMode: v }))} />
-        </div>
-      </section>
+            {isCoding ? null : (
+            <div className={`mt-5 flex gap-2.5 rounded-xl border p-3 text-sm ${hasResume ? 'border-emerald-400/20 bg-emerald-400/[0.06]' : 'border-amber-400/25 bg-amber-400/[0.06]'}`}>
+              {hasResume ? <IconCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" /> : <IconFile className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />}
+              <p className="text-ink-soft">
+                {hasResume ? (
+                  'Your resume is loaded. Expect questions about your own projects.'
+                ) : (
+                  <>
+                    No resume yet, so questions will be general.{' '}
+                    <Link to="/resume" className="font-semibold text-amber-200 underline-offset-4 hover:underline">
+                      Add it
+                    </Link>
+                  </>
+                )}
+              </p>
+            </div>
+            )}
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-          <p className="text-sm font-semibold text-slate-100">Role</p>
-          <p className="mt-1 text-xs text-slate-400">Role affects round focus and question style.</p>
-          <div className="mt-4">
-            <RoleSelector value={form.role} onChange={(v) => setForm((p) => ({ ...p, role: v }))} />
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-          <p className="text-sm font-semibold text-slate-100">Company</p>
-          <p className="mt-1 text-xs text-slate-400">Company-specific round structure and priorities.</p>
-          <div className="mt-4">
-            <CompanySelector value={form.company} onChange={(v) => setForm((p) => ({ ...p, company: v }))} />
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-white/10 bg-[#111620] p-6">
-        <p className="text-sm font-semibold text-slate-100">Difficulty</p>
-        <p className="mt-1 text-xs text-slate-400">Affects question depth and follow-up intensity.</p>
-        <div className="mt-4 max-w-sm">
-          <DifficultySelector value={form.difficulty} onChange={(v) => setForm((p) => ({ ...p, difficulty: v }))} />
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-400">
-            {hasResume ? 'Resume-based questions will be included in Round 1.' : 'Upload resume to enable project/skill questions.'}
-          </div>
-          <button
-            type="button"
-            onClick={start}
-            className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 transition hover:opacity-90"
-          >
-            {form.interviewMode === 'ai_simulated' ? 'Start Conversational Interview' : 'Start Standard Interview'}
-          </button>
-        </div>
-      </section>
+            <Button size="lg" className="mt-5 w-full" onClick={start} disabled={starting}>
+              {starting ? (
+                <>
+                  <Spinner /> Starting…
+                </>
+              ) : (
+                <>
+                  {isCoding ? 'Choose a problem' : (
+                    <>
+                      <IconMic className="h-4 w-4" /> Start interview
+                    </>
+                  )}{' '}
+                  <IconArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+            {isVoice && !isCoding ? <p className="mt-3 text-center text-xs text-ink-faint">You&apos;ll be asked for microphone access. Find a quiet spot.</p> : null}
+          </Card>
+        </aside>
+      </div>
     </div>
   )
 }
@@ -121,4 +178,3 @@ export default function InterviewSetupPage() {
     </InterviewProvider>
   )
 }
-
